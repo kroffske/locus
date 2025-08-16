@@ -1,5 +1,5 @@
-from src.project_analyzer.cli import args
-from src.project_analyzer.models import TargetSpecifier
+from src.locus.cli import args
+from src.locus.models import TargetSpecifier
 
 
 def test_parse_target_specifier_simple_path():

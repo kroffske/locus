@@ -104,16 +104,16 @@ cat changes.md | locus update --backup
 ## Architecture
 
 ### Core Processing Flow
-1. **Orchestrator** (`src/project_analyzer/core/orchestrator.py`) - Coordinates the entire analysis workflow
+1. **Orchestrator** (`src/locus/core/orchestrator.py`) - Coordinates the entire analysis workflow
    - Automatically discovers and reads README files (README.md, .rst, .txt)
    - Stores README content in `AnalysisResult.project_readme_content`
-2. **Scanner** (`src/project_analyzer/core/scanner.py`) - Discovers files using pattern matching
-3. **Resolver** (`src/project_analyzer/core/resolver.py`) - Handles dependency resolution for Python imports
-4. **Processor** (`src/project_analyzer/core/processor.py`) - Analyzes individual files and extracts metadata
+2. **Scanner** (`src/locus/core/scanner.py`) - Discovers files using pattern matching
+3. **Resolver** (`src/locus/core/resolver.py`) - Handles dependency resolution for Python imports
+4. **Processor** (`src/locus/core/processor.py`) - Analyzes individual files and extracts metadata
 
 ### Key Design Patterns
 
-**Data Models** (`src/project_analyzer/models.py`):
+**Data Models** (`src/locus/models.py`):
 - All data structures use Pydantic models for validation
 - `TargetSpecifier` handles complex file:line_range specifications
 - `FileAnalysis` combines file metadata with content and annotations
@@ -124,7 +124,7 @@ cat changes.md | locus update --backup
 - Pattern matching uses glob patterns with fallback defaults
 - Configuration is loaded once and passed through the pipeline
 
-**CLI Structure** (`src/project_analyzer/cli/`):
+**CLI Structure** (`src/locus/cli/`):
 - Uses argparse for command parsing
 - Subcommands: `analyze` and `update`
 - Mode detection based on output destination:

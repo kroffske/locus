@@ -1,5 +1,5 @@
-from src.project_analyzer.formatting import code, helpers, tree
-from src.project_analyzer.models import (
+from src.locus.formatting import code, helpers, tree
+from src.locus.models import (
     AnalysisResult,
     AnnotationInfo,
     FileAnalysis,

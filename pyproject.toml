@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locus-analyzer"
-version = "2.0.0"
+version = "0.1.0"
 authors = [
     { name="Your Name", email="your@email.com" },
 ]
@@ -36,7 +36,7 @@ data = [
 
 [project.scripts]
 # This creates the `locus` command in the user's PATH
-locus = "project_analyzer.cli.main:main"
+locus = "locus.cli.main:main"
 
 
 
@@ -100,7 +100,7 @@ ignore = ["E701"]
 
 # `__init__.py` files are often used to define a package's public API,
 # so unused imports (F401) are expected and should be ignored.
-"src/project_analyzer/__init__.py" = ["F401"]
+"src/locus/__init__.py" = ["F401"]
 
 
 [tool.ruff.format]

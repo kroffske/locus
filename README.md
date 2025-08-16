@@ -374,7 +374,7 @@ output_dir/
 pytest
 
 # Run with coverage
-pytest --cov=project_analyzer
+pytest --cov=locus
 
 # Run specific test file
 pytest tests/test_core.py
