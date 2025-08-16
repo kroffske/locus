@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Project Analyzer is a Python CLI tool for analyzing source code projects and generating comprehensive reports. It can also apply changes from Markdown files back to source code.
+Locus Analyzer is a Python CLI tool that pinpoints and documents your project structure. It analyzes source code, generates comprehensive reports, and can apply changes from Markdown files back to source code.
 
 ## Commands
 
@@ -52,53 +52,53 @@ ruff format --check src/ tests/
 #### Interactive Mode (Terminal Output)
 ```bash
 # Quick overview of current directory
-pr-analyze analyze
+locus analyze
 
 # Analyze specific directory
-pr-analyze analyze src/
+locus analyze src/
 
 # Include file comments in tree
-pr-analyze analyze -c
+locus analyze -c
 
 # Force include README when piping
-pr-analyze analyze --with-readme | less
+locus analyze --with-readme | less
 ```
 
 #### Report Mode (Markdown File)
 ```bash
 # Full report with all code (default)
-pr-analyze analyze -o analysis.md
+locus analyze -o analysis.md
 
 # Minimal report (tree + README only)
-pr-analyze analyze -o summary.md --style minimal
+locus analyze -o summary.md --style minimal
 
 # Annotations only (function/class signatures)
-pr-analyze analyze -o structure.md --style annotations
+locus analyze -o structure.md --style annotations
 
 # Report without README
-pr-analyze analyze -o code.md --skip-readme
+locus analyze -o code.md --skip-readme
 
 # With dependency resolution
-pr-analyze analyze src/ -o report.md -d 2
+locus analyze src/ -o report.md -d 2
 ```
 
 #### Collection Mode (Flat Directory Export)
 ```bash
 # Export files to flat directory
-pr-analyze analyze -o output/
+locus analyze -o output/
 
 # Add annotations report
-pr-analyze analyze -o output/ --add-annotations
+locus analyze -o output/ --add-annotations
 
 # Export without README
-pr-analyze analyze -o output/ --skip-readme
+locus analyze -o output/ --skip-readme
 ```
 
 #### Update Mode
 ```bash
 # Apply updates from markdown
-cat changes.md | pr-analyze update --dry-run
-cat changes.md | pr-analyze update --backup
+cat changes.md | locus update --dry-run
+cat changes.md | locus update --backup
 ```
 
 ## Architecture

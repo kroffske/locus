@@ -1,6 +1,6 @@
-# Project Analyzer
+# Locus Analyzer
 
-A powerful Python CLI tool for analyzing source code projects, generating comprehensive reports, and applying code updates from Markdown files.
+**Locus** - A powerful Python CLI tool that pinpoints and documents your project structure. It analyzes source code, generates comprehensive reports, and applies code updates from Markdown files.
 
 ## Features
 
@@ -19,15 +19,15 @@ A powerful Python CLI tool for analyzing source code projects, generating compre
 ### Basic Installation
 
 ```bash
-pip install project-analyzer
+pip install locus-analyzer
 ```
 
 ### Development Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/kroffske/project-analyzer.git
-cd project-analyzer
+git clone https://github.com/your-username/locus-analyzer.git
+cd locus-analyzer
 
 # Install in development mode
 pip install -e .
@@ -42,41 +42,41 @@ pip install -e .[data]
 
 ```bash
 # Quick project overview
-pr-analyze analyze
+locus analyze
 
 # Analyze specific directory
-pr-analyze analyze src/
+locus analyze src/
 
 # Show tree with descriptive comments
-pr-analyze analyze -c
+locus analyze -c
 ```
 
 ### Report Mode (Markdown File)
 
 ```bash
 # Full analysis report with all code
-pr-analyze analyze -o analysis.md
+locus analyze -o analysis.md
 
 # Minimal summary (tree + README only)
-pr-analyze analyze -o summary.md --style minimal
+locus analyze -o summary.md --style minimal
 
 # Structure report with signatures only
-pr-analyze analyze -o structure.md --style annotations
+locus analyze -o structure.md --style annotations
 ```
 
 ### Collection Mode (Directory Export)
 
 ```bash
 # Export analyzed files to directory
-pr-analyze analyze -o output/
+locus analyze -o output/
 
 # Export with annotations report
-pr-analyze analyze -o output/ --add-annotations
+locus analyze -o output/ --add-annotations
 ```
 
 ## Commands
 
-### `pr-analyze analyze`
+### `locus analyze`
 
 Analyzes source code and generates reports. The output mode is determined by the `-o` option:
 - **No `-o` flag**: Interactive mode (prints to terminal)
@@ -117,70 +117,70 @@ Analyzes source code and generates reports. The output mode is determined by the
 
 ```bash
 # Quick overview of current directory
-pr-analyze analyze
+locus analyze
 
 # View project structure with comments
-pr-analyze analyze -c
+locus analyze -c
 
 # Analyze specific directory interactively
-pr-analyze analyze src/
+locus analyze src/
 
 # Include README even when piping to another command
-pr-analyze analyze --with-readme | less
+locus analyze --with-readme | less
 ```
 
 ##### Report Mode (Markdown File Output)
 
 ```bash
 # Full report with all code (default)
-pr-analyze analyze -o analysis.md
+locus analyze -o analysis.md
 
 # Minimal report (README + tree only, no code)
-pr-analyze analyze -o summary.md --style minimal
+locus analyze -o summary.md --style minimal
 
 # Report with only function/class signatures
-pr-analyze analyze -o structure.md --style annotations
+locus analyze -o structure.md --style annotations
 
 # Full report without README
-pr-analyze analyze -o code_only.md --skip-readme
+locus analyze -o code_only.md --skip-readme
 
 # Report with dependency resolution
-pr-analyze analyze src/ -o deep_analysis.md -d 3
+locus analyze src/ -o deep_analysis.md -d 3
 
 # Report with filtered content
-pr-analyze analyze -o report.md --include "*.py" --exclude "test_*.py"
+locus analyze -o report.md --include "*.py" --exclude "test_*.py"
 ```
 
 ##### Collection Mode (Directory Output)
 
 ```bash
 # Extract all files to a directory
-pr-analyze analyze -o extracted_files/
+locus analyze -o extracted_files/
 
 # Collection with annotations report
-pr-analyze analyze -o output/ --add-annotations
+locus analyze -o output/ --add-annotations
 
 # Collection without README
-pr-analyze analyze -o files/ --skip-readme
+locus analyze -o files/ --skip-readme
 
 # Extract specific module with dependencies
-pr-analyze analyze src/main.py -o module_export/ -d 2
+locus analyze src/main.py -o module_export/ -d 2
 ```
 
 ##### Advanced Examples
 
 ```bash
 # Analyze specific lines in a file
-pr-analyze analyze src/main.py:10-50,100-150 -o report.md
+locus analyze src/main.py:10-50,100-150 -o report.md
 
 # Use regex to control code inclusion
-pr-analyze analyze -o report.md --full-code-regex ".*main.*" --annotation-regex ".*test.*"
+locus analyze -o report.md --full-code-regex ".*main.*" --annotation-regex ".*test.*"
 
 # Combine multiple options
-pr-analyze analyze src/ -o detailed.md --style full -c -a -d 2 --exclude "**/tests/**"
+locus analyze src/ -o detailed.md --style full -c -a -d 2 --exclude "**/tests/**"
 ```
 
-### `pr-analyze update` (or `pr-update`)
+### `locus update`
 
 Applies code changes from Markdown files back to source files.
 
@@ -193,16 +193,13 @@ Applies code changes from Markdown files back to source files.
 
 ```bash
 # Apply updates from a Markdown file
-cat changes.md | pr-analyze update
-
-# Or use the shortcut command
-cat changes.md | pr-update
+cat changes.md | locus update
 
 # Preview changes without applying
-cat changes.md | pr-update --dry-run
+cat changes.md | locus update --dry-run
 
 # Create backups before applying changes
-cat changes.md | pr-update --backup
+cat changes.md | locus update --backup
 ```
 
 #### Markdown Format
@@ -256,13 +253,13 @@ The tool can automatically follow Python imports to include related files:
 
 ```bash
 # Follow imports up to 2 levels deep
-pr-analyze analyze main.py -d 2
+locus analyze main.py -d 2
 
 # Unlimited depth (use with caution)
-pr-analyze analyze main.py -d -1
+locus analyze main.py -d -1
 
 # Disable dependency resolution
-pr-analyze analyze main.py -d 0
+locus analyze main.py -d 0
 ```
 
 ### Line Range Specification
@@ -271,13 +268,13 @@ Analyze specific parts of files:
 
 ```bash
 # Single range
-pr-analyze analyze src/main.py:10-50
+locus analyze src/main.py:10-50
 
 # Multiple ranges
-pr-analyze analyze src/main.py:10-50,100-150,200
+locus analyze src/main.py:10-50,100-150,200
 
 # Mix of files and ranges
-pr-analyze analyze src/main.py:1-100 src/utils.py tests/
+locus analyze src/main.py:1-100 src/utils.py tests/
 ```
 
 ### Content Control
@@ -286,19 +283,19 @@ Control what content appears in reports:
 
 ```bash
 # Exclude README from output
-pr-analyze analyze -o report.md --skip-readme
+locus analyze -o report.md --skip-readme
 
 # Force include README when piping
-pr-analyze analyze --with-readme | grep "TODO"
+locus analyze --with-readme | grep "TODO"
 
 # Different content styles
-pr-analyze analyze -o full_report.md --style full        # Everything
-pr-analyze analyze -o stubs_only.md --style annotations  # Signatures only
-pr-analyze analyze -o overview.md --style minimal        # Tree only
+locus analyze -o full_report.md --style full        # Everything
+locus analyze -o stubs_only.md --style annotations  # Signatures only
+locus analyze -o overview.md --style minimal        # Tree only
 
 # Pattern-based inclusion
-pr-analyze analyze -o report.md --full-code-regex ".*main.*"
-pr-analyze analyze -o report.md --annotation-regex ".*test.*"
+locus analyze -o report.md --full-code-regex ".*main.*"
+locus analyze -o report.md --annotation-regex ".*test.*"
 ```
 
 ## Output Modes

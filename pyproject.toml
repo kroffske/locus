@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "project-analyzer"
-version = "1.1.0"
+name = "locus-analyzer"
+version = "2.0.0"
 authors = [
     { name="Your Name", email="your@email.com" },
 ]
-description = "A tool for analyzing and updating project files from Markdown."
+description = "A powerful code analysis tool that pinpoints and documents your project structure."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -31,13 +31,12 @@ data = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/your-username/project-analyzer"
-"Bug Tracker" = "https://github.com/your-username/project-analyzer/issues"
+"Homepage" = "https://github.com/your-username/locus-analyzer"
+"Bug Tracker" = "https://github.com/your-username/locus-analyzer/issues"
 
 [project.scripts]
-# This creates the `pr-analyze` command in the user's PATH
-pr-analyze = "project_analyzer.cli.main:main"
-pr-update = "project_analyzer.cli.main:main"
+# This creates the `locus` command in the user's PATH
+locus = "project_analyzer.cli.main:main"
 
 
 
