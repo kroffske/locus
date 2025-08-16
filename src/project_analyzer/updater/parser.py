@@ -9,11 +9,12 @@ logger = logging.getLogger(__name__)
 # Regex to find file blocks, e.g., ### File: `path/to/file.py`
 FILE_BLOCK_REGEX = re.compile(
     r"###\s+File:\s+`([^`]+)`\s*\n"  # Header line with filename
-    r"```[a-zA-Z]*\n"                 # Start of the code block
-    r"(.*?)\n"                        # The content (non-greedy)
-    r"```",                           # End of the code block
-    re.DOTALL,                         # Allow . to match newlines
+    r"```[a-zA-Z]*\n"  # Start of the code block
+    r"(.*?)\n"  # The content (non-greedy)
+    r"```",  # End of the code block
+    re.DOTALL,  # Allow . to match newlines
 )
+
 
 def parse_markdown_to_updates(markdown_content: str) -> List[UpdateOperation]:
     """Parses a Markdown string to find specially formatted code blocks and

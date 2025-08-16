@@ -15,6 +15,7 @@ def test_load_project_config(project_structure: Path):
     assert "build/" in ignore_patterns
     assert "*.log" in ignore_patterns
 
+
 def test_is_path_ignored():
     """Test the path ignoring logic with various patterns."""
     ignore_patterns = {"build/", "*.log", "docs/internal"}
@@ -35,6 +36,7 @@ def test_is_path_ignored():
     assert helpers.is_path_ignored("src/main.py", "/root", ignore_patterns) is False
     assert helpers.is_path_ignored("docs/public/guide.md", "/root", ignore_patterns) is False
 
+
 def test_build_file_tree():
     """Test the construction of the nested dictionary file tree."""
     file_infos = [
@@ -49,7 +51,8 @@ def test_build_file_tree():
     assert isinstance(tree["src"], dict)
     assert "main.py" in tree["src"]
     assert "utils.py" in tree["src"]
-    assert tree["src"]["main.py"] is None # Files are marked with None
+    assert tree["src"]["main.py"] is None  # Files are marked with None
+
 
 def test_file_cache(tmp_path: Path):
     """Test the FileCache logic."""
@@ -66,7 +69,7 @@ def test_file_cache(tmp_path: Path):
 
         # Second call should hit the cache
         content2 = cache.get_content(str(test_file))
-        mocked_open.assert_called_once() # Still only called once
+        mocked_open.assert_called_once()  # Still only called once
         assert content2 == "hello world"
 
     # Test clearing the cache

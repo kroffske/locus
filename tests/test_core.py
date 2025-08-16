@@ -30,6 +30,7 @@ def test_scanner(project_structure: Path):
     # Non-allowed files should not be present
     assert "data/sample.csv" not in rel_files
 
+
 def test_resolver(project_structure: Path):
     """Test dependency resolution."""
     # Simplified test setup for resolver
@@ -47,7 +48,8 @@ def test_resolver(project_structure: Path):
 
     # Simplified mocks for FileInfo objects
     class MockFileInfo:
-        def __init__(self, rel_path): self.relative_path = rel_path
+        def __init__(self, rel_path):
+            self.relative_path = rel_path
 
     file_info_map = {path: MockFileInfo(file_map[path]["relative_path"]) for path in file_map}
 
@@ -66,6 +68,7 @@ def test_resolver(project_structure: Path):
     # Test with depth=0 (no resolution)
     resolved_d0 = resolver.resolve_dependencies(initial_files, file_info_map, module_to_file_map, 0)
     assert resolved_d0 == {main_path}
+
 
 def test_orchestrator_integration(project_structure: Path):
     """Test the main `analyze` orchestrator function."""

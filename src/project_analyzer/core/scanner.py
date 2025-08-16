@@ -7,6 +7,7 @@ from ..utils import helpers
 
 logger = logging.getLogger(__name__)
 
+
 def scan_directory(
     project_path: str,
     ignore_patterns: Set[str],
@@ -30,26 +31,9 @@ def scan_directory(
                 continue
 
             rel_path_norm = rel_path.replace("\\", "/")
-            if any(
-                fnmatch.fnmatch(rel_path_norm, pattern) or
-                fnmatch.fnmatch(os.path.basename(rel_path_norm), pattern)
-                for pattern in allow_patterns
-            ):
+            if any(fnmatch.fnmatch(rel_path_norm, pattern) or fnmatch.fnmatch(os.path.basename(rel_path_norm), pattern) for pattern in allow_patterns):
                 candidate_files.append(abs_path)
 
     unique_files = sorted(list(set(candidate_files)))
     logger.info(f"Scan found {len(unique_files)} files matching allow patterns.")
     return unique_files
-
-
-
-
-
-
-
-
-
-
-
-
-

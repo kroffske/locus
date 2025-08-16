@@ -6,9 +6,9 @@ from ..models import TargetSpecifier
 
 logger = logging.getLogger(__name__)
 
+
 def parse_target_specifier(spec: str) -> TargetSpecifier:
-    """Parses a target string (e.g., "path/to/file.py:10-25,40") into a TargetSpecifier.
-    """
+    """Parses a target string (e.g., "path/to/file.py:10-25,40") into a TargetSpecifier."""
     path = spec
     line_ranges: List[Tuple[int, int]] = []
 
@@ -29,9 +29,9 @@ def parse_target_specifier(spec: str) -> TargetSpecifier:
 
     return TargetSpecifier(path=path, line_ranges=line_ranges)
 
+
 def parse_arguments() -> argparse.Namespace:
-    """Defines and configures the argument parser with sub-commands.
-    """
+    """Defines and configures the argument parser with sub-commands."""
     parser = argparse.ArgumentParser(
         description="A tool for analyzing and updating project files.",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -48,13 +48,11 @@ def parse_arguments() -> argparse.Namespace:
         "targets",
         nargs="*",
         default=["."],
-        help='One or more targets to analyze. Can be:\n'
-             '- A directory path (e.g., src/)\n'
-             '- A file path (e.g., src/main.py)\n'
-             '- A file with line ranges (e.g., "src/main.py:10-50")',
+        help='One or more targets to analyze. Can be:\n- A directory path (e.g., src/)\n- A file path (e.g., src/main.py)\n- A file with line ranges (e.g., "src/main.py:10-50")',
     )
     analyze_parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         help="Output destination. A path to a file (.md) or a directory.",
     )
     # File Selection Group for Analyze
@@ -68,12 +66,22 @@ def parse_arguments() -> argparse.Namespace:
     output_formatting.add_argument("-a", "--annotations", action="store_true", help="Add a detailed OUT.md annotations report.")
     output_formatting.add_argument("--full-code-regex", metavar="REGEX", help="Regex for files to include full code.")
     output_formatting.add_argument("--annotation-regex", metavar="REGEX", help="Regex for files to show as stubs.")
-    # Alternate Modes Group for Analyze
-    alternate_modes = analyze_parser.add_argument_group("Alternate Modes")
-    alternate_modes.add_argument(
-        "--generate-summary", metavar="FILENAME", nargs="?",
-        const="claude.md", default=None,
-        help="Generate a summary file (default: claude.md)."
+
+    # Content Style Group for Analyze
+    content_style = analyze_parser.add_argument_group("Content Style")
+    content_style.add_argument(
+        "--style",
+        choices=["full", "annotations", "minimal"],
+        default="full",
+        help="Output style for report mode: full (default, includes code), annotations (stubs only), or minimal (tree only)",
+    )
+    content_style.add_argument("--skip-readme", action="store_true", help="Exclude README from output")
+    content_style.add_argument("--with-readme", action="store_true", help="Force include README (useful when piping)")
+    content_style.add_argument("--add-annotations", action="store_true", help="Add OUT.md annotations file to directory output")
+
+    # Deprecated option (kept for backward compatibility)
+    content_style.add_argument(
+        "--generate-summary", metavar="FILENAME", nargs="?", const="claude.md", default=None, help="(DEPRECATED: Use -o file.md --style minimal) Generate summary file"
     )
     # Logging Group (shared)
     for p in [analyze_parser]:

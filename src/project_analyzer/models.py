@@ -9,6 +9,7 @@ class TargetSpecifier:
     path: str
     line_ranges: List[Tuple[int, int]] = field(default_factory=list)
 
+
 @dataclass
 class FileInfo:
     """Represents information about a single file."""
@@ -22,12 +23,15 @@ class FileInfo:
     is_stub: bool = False
     is_data_preview: bool = False
 
+
 @dataclass
 class AnnotationInfo:
     """Represents extracted annotations (docstrings, signatures) for a file."""
 
     module_docstring: Optional[str] = None
     elements: Dict[str, Any] = field(default_factory=dict)
+    imports: List[str] = field(default_factory=list)  # List of import statements
+
 
 @dataclass
 class FileAnalysis:
@@ -38,13 +42,14 @@ class FileAnalysis:
     comments: List[str] = field(default_factory=list)
     content: Optional[str] = None
 
+
 @dataclass
 class AnalysisResult:
     """Represents the overall result of a code analysis run."""
 
     project_path: str
     target_specs: List[TargetSpecifier] = field(default_factory=list)
-    required_files: Dict[str, FileAnalysis] = field(default_factory=dict) # Keyed by absolute path
+    required_files: Dict[str, FileAnalysis] = field(default_factory=dict)  # Keyed by absolute path
     file_tree: Dict[str, Any] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
     project_readme_content: Optional[str] = None

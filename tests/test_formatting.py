@@ -41,6 +41,7 @@ def test_format_tree():
     assert "main.py  # This is the main entry point" in output_with_comments
     assert "utils.py  # Helper functions" in output_with_comments
 
+
 def test_get_output_content():
     """Test the logic for selecting file content (full, stub, etc.)."""
     info = FileInfo(absolute_path="", relative_path="src/logic.py", filename="logic.py")
@@ -57,9 +58,10 @@ def test_get_output_content():
     assert "def my_func()" in content
 
     # Test annotation stub mode
-    stub_content, stub_mode = helpers.get_output_content(analysis, None, ".*") # Regex matches anything
+    stub_content, stub_mode = helpers.get_output_content(analysis, None, ".*")  # Regex matches anything
     assert stub_mode == "annotation_stub"
     assert "def my_func(...): ..." in stub_content
+
 
 def test_format_code_collection():
     """Test the aggregation of files into a single string."""

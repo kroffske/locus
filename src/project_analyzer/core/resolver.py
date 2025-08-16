@@ -7,14 +7,14 @@ from ..models import FileInfo
 
 logger = logging.getLogger(__name__)
 
+
 def resolve_dependencies(
     initial_files: Set[str],
     file_map: Dict[str, FileInfo],
     module_to_file: Dict[str, str],
     max_depth: int,
 ) -> Set[str]:
-    """Recursively finds dependencies for a given set of initial files up to a max depth.
-    """
+    """Recursively finds dependencies for a given set of initial files up to a max depth."""
     required_files: Set[str] = set()
     queue: List[Tuple[str, int]] = [(f, 0) for f in initial_files]
     visited: Set[str] = set(initial_files)
@@ -58,19 +58,23 @@ def extract_imports(file_path: str, relative_path: str) -> Set[str]:
         elif isinstance(node, ast.ImportFrom):
             if node.level > 0:
                 resolved = _resolve_relative_import(relative_path, node.level, node.module)
-                if resolved: imports.add(resolved.split(".")[0])
+                if resolved:
+                    imports.add(resolved.split(".")[0])
             elif node.module:
                 imports.add(node.module.split(".")[0])
 
     return imports
 
+
 def _resolve_relative_import(current_rel_path: str, level: int, module: Optional[str]) -> Optional[str]:
     """Resolves a relative import to an absolute module path."""
     path_parts = os.path.dirname(current_rel_path).replace("\\", "/").split("/")
-    if path_parts == [""]: path_parts = []
+    if path_parts == [""]:
+        path_parts = []
 
-    if level > len(path_parts): return None
-    base_parts = path_parts[:-level+1] if level > 1 else path_parts
+    if level > len(path_parts):
+        return None
+    base_parts = path_parts[: -level + 1] if level > 1 else path_parts
 
     resolved_parts = base_parts + (module.split(".") if module else [])
     return ".".join(filter(None, resolved_parts))

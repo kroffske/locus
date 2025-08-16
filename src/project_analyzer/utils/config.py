@@ -4,9 +4,9 @@ from typing import Set, Tuple
 
 logger = logging.getLogger(__name__)
 
+
 def load_project_config(project_path: str) -> Tuple[Set[str], Set[str]]:
-    """Loads ignore and allow patterns from .claudeignore and .claudeallow files.
-    """
+    """Loads ignore and allow patterns from .claudeignore and .claudeallow files."""
     ignore_file = os.path.join(project_path, ".claudeignore")
     allow_file = os.path.join(project_path, ".claudeallow")
 
@@ -17,6 +17,7 @@ def load_project_config(project_path: str) -> Tuple[Set[str], Set[str]]:
     logger.debug(f"Loaded {len(allow_patterns)} allow patterns.")
 
     return ignore_patterns, allow_patterns
+
 
 def _read_pattern_file(filepath: str) -> Set[str]:
     """Reads a pattern file, ignoring comments and empty lines."""

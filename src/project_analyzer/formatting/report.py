@@ -8,18 +8,24 @@ from . import code, tree
 
 logger = logging.getLogger(__name__)
 
+
 def generate_full_report(
     result: AnalysisResult,
     include_tree: bool,
     include_code: bool,
     include_annotations_report: bool,
+    include_readme: bool,
     include_comments_in_tree: bool,
     full_code_re: Optional[Pattern] = None,
     annotation_re: Optional[Pattern] = None,
 ) -> str:
     """Generates a single, comprehensive Markdown report file."""
-    parts = [f"# Code Analysis Report for: {result.project_path}"]
+    parts = ["# Code Analysis Report"]
     parts.append(f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    # Add README content first if available
+    if include_readme and result.project_readme_content:
+        parts.extend(["## Project Documentation\n", result.project_readme_content, "\n---\n"])
 
     if result.errors:
         parts.extend(["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"])
@@ -35,6 +41,7 @@ def generate_full_report(
         parts.extend(["## File Contents", code.format_code_collection(result, full_code_re, annotation_re)])
 
     return "\n".join(parts)
+
 
 def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: str, include_comments: bool):
     """Generates a claude.md-style summary file."""
@@ -57,27 +64,39 @@ def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: s
         logger.error(f"Error generating {readme_path}: {e}")
         raise
 
+
 def generate_annotations_report_file(result: AnalysisResult, output_dir: str, filename: str, include_comments: bool):
     """Generates a dedicated OUT.md file with annotations."""
     report_path = os.path.join(output_dir, filename)
     logger.info(f"Generating annotations report: {report_path}")
     content = generate_annotations_report_str(result)
     try:
-        with open(report_path, "w", encoding="utf-8") as f: f.write(content)
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(content)
         logger.info(f"Successfully wrote annotations report to {report_path}")
     except OSError as e:
         logger.error(f"Error writing annotations report to {report_path}: {e}")
         raise
 
+
 def generate_annotations_report_str(result: AnalysisResult) -> str:
     """Generates the annotations section as a string."""
     annotated = [fa for fa in result.required_files.values() if fa.annotations and (fa.annotations.module_docstring or fa.annotations.elements)]
-    if not annotated: return "## Detailed Annotations\n\nNo detailed annotations were extracted."
+    if not annotated:
+        return "## Detailed Annotations\n\nNo detailed annotations were extracted."
 
     parts = ["## Detailed Annotations"]
+    parts.append("\nThe following shows the structure and documentation of all analyzed Python files.")
+    parts.append("Each file contains function and class signatures with their docstrings, without implementation details.\n")
+    parts.append("```python")
+
     for analysis in sorted(annotated, key=lambda fa: fa.file_info.relative_path):
-        parts.extend([f"\n### File: `{analysis.file_info.relative_path}`", _format_single_annotation(analysis.annotations)])
+        parts.append(f"\n# source: {analysis.file_info.relative_path}")
+        parts.append(_format_single_annotation_as_stub(analysis.annotations))
+
+    parts.append("```")
     return "\n".join(parts)
+
 
 def _format_single_annotation(annotations: AnnotationInfo) -> str:
     """Formats the annotations for a single file into Markdown."""
@@ -87,6 +106,71 @@ def _format_single_annotation(annotations: AnnotationInfo) -> str:
 
     for name, details in sorted(annotations.elements.items()):
         lines.append(f"#### {details.get('type', 'unknown').capitalize()}: `{name}`")
-        if "signature" in details: lines.append(f"```python\n{details['signature']}\n```")
-        if details.get("docstring"): lines.append(f"**Docstring:**\n> {details['docstring']}\n")
+        if "signature" in details:
+            lines.append(f"```python\n{details['signature']}\n```")
+        if details.get("docstring"):
+            lines.append(f"**Docstring:**\n> {details['docstring']}\n")
+    return "\n".join(lines)
+
+
+def _format_single_annotation_as_stub(annotations: AnnotationInfo) -> str:
+    """Formats the annotations for a single file as Python stubs."""
+    lines = []
+
+    # Add module docstring if present
+    if annotations.module_docstring:
+        lines.append(f'"""{annotations.module_docstring}"""')
+        lines.append("")
+
+    # Add imports
+    if annotations.imports:
+        for import_stmt in annotations.imports:
+            lines.append(import_stmt)
+        lines.append("")
+
+    # Process each element (function or class)
+    for name, details in sorted(annotations.elements.items()):
+        if details.get("type") == "function":
+            # Function stub
+            signature = details.get("signature", f"def {name}(...)")
+            lines.append(signature)
+            if details.get("docstring"):
+                lines.append(f'    """{details["docstring"]}"""')
+            lines.append("    ...")
+            lines.append("")
+        elif details.get("type") == "class":
+            # Add decorators
+            decorators = details.get("decorators", [])
+            for decorator in decorators:
+                lines.append(decorator)
+
+            # Class definition
+            lines.append(f"class {name}:")
+            if details.get("docstring"):
+                lines.append(f'    """{details["docstring"]}"""')
+                lines.append("")
+
+            # Add class attributes
+            attributes = details.get("attributes", [])
+            if attributes:
+                for attr in attributes:
+                    lines.append(f"    {attr}")
+                if attributes:
+                    lines.append("")
+
+            # Add class methods
+            methods = details.get("methods", {})
+            if methods:
+                for method_name, method_details in sorted(methods.items()):
+                    method_sig = method_details.get("signature", f"def {method_name}(...)")
+                    lines.append(f"    {method_sig}")
+                    if method_details.get("docstring"):
+                        lines.append(f'        """{method_details["docstring"]}"""')
+                    lines.append("        ...")
+                    lines.append("")
+            elif not attributes:
+                # Only add ... if there are no attributes or methods
+                lines.append("    ...")
+                lines.append("")
+
     return "\n".join(lines)

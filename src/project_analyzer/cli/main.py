@@ -11,14 +11,25 @@ from .args import parse_arguments, parse_target_specifier
 
 logger = logging.getLogger(__name__)
 
+
 def handle_analyze_command(args):
     """Orchestrates the 'analyze' command workflow."""
-    is_default_mode = args.targets == ["."] and not args.output and not args.generate_summary
-    is_action_mode = not is_default_mode
+    # Handle deprecated --generate-summary
+    if args.generate_summary:
+        logger.warning("--generate-summary is deprecated. Use: -o file.md --style minimal")
+        if not args.output:
+            args.output = args.generate_summary
+            args.style = "minimal"
 
-    if is_action_mode and not args.generate_summary and not args.output:
-        logger.error("Error: An output file/directory (-o) is required for this command.")
-        return 1
+    # Determine mode based on output
+    if not args.output:
+        mode = "interactive"
+    elif os.path.splitext(args.output)[1]:  # Has extension
+        mode = "report"
+    else:
+        mode = "collection"
+
+    logger.debug(f"Operating in {mode} mode")
 
     try:
         full_code_re = compile_regex(args.full_code_regex)
@@ -46,29 +57,76 @@ def handle_analyze_command(args):
         for error in result.errors:
             logger.error(f"- {error}")
 
+    # Determine README inclusion
+    include_readme = True
+    if mode == "interactive" and not sys.stdout.isatty() and not args.with_readme:
+        include_readme = False
+    if args.skip_readme:
+        include_readme = False
+
+    # Validate option combinations
+    if mode == "collection" and args.style == "annotations":
+        logger.error("For directory output, use --add-annotations instead of --style annotations")
+        return 1
+
     try:
-        if is_default_mode:
+        if mode == "interactive":
+            # Interactive mode: print to stdout
+            if include_readme and result.project_readme_content:
+                print("## Project README\n")
+                print(result.project_readme_content)
+                print("\n---\n")
             if result.file_tree:
                 print("## Project Structure")
                 tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, args.comments)
                 print(tree_md)
-        elif args.generate_summary:
-            report.generate_summary_readme(result, project_path, args.generate_summary, args.comments)
-        elif is_action_mode and args.output:
+
+        elif mode == "report":
+            # Report mode: write to file
             output_path = args.output
-            if os.path.splitext(output_path)[1]: # Single file
-                content = report.generate_full_report(result, True, True, args.annotations, args.comments, full_code_re, annotation_re)
-                os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-                with open(output_path, "w", encoding="utf-8") as f: f.write(content)
-                logger.info(f"Successfully wrote output to {output_path}")
-            else: # Directory
-                code.collect_files_to_directory(result, output_path, full_code_re, annotation_re)
-                if args.annotations:
-                    report.generate_annotations_report_file(result, output_path, "OUT.md", args.comments)
+
+            # Determine what to include based on style
+            include_code = args.style == "full"
+            include_annotations = args.style == "annotations" or args.annotations
+
+            content = report.generate_full_report(
+                result,
+                include_tree=True,
+                include_code=include_code,
+                include_annotations_report=include_annotations,
+                include_readme=include_readme,
+                include_comments_in_tree=args.comments,
+                full_code_re=full_code_re,
+                annotation_re=annotation_re,
+            )
+
+            os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"Successfully wrote output to {output_path}")
+
+        elif mode == "collection":
+            # Collection mode: write to directory
+            output_path = args.output
+            code.collect_files_to_directory(result, output_path, full_code_re, annotation_re)
+
+            # Add annotations report if requested
+            if args.add_annotations or args.annotations:
+                report.generate_annotations_report_file(result, output_path, "OUT.md", args.comments)
+
+            # Copy README if present and not skipped
+            if include_readme and result.project_readme_content:
+                readme_path = os.path.join(output_path, "README.md")
+                os.makedirs(output_path, exist_ok=True)
+                with open(readme_path, "w", encoding="utf-8") as f:
+                    f.write(result.project_readme_content)
+                logger.info(f"Copied README to {readme_path}")
+
     except OSError as e:
         logger.error(f"Fatal error during output generation: {e}", exc_info=True)
         return 1
     return 0
+
 
 def handle_update_command(args):
     """Orchestrates the 'update' command workflow."""
@@ -99,6 +157,7 @@ def handle_update_command(args):
         return 1
     return 0
 
+
 def main():
     """Main entry point for the CLI."""
     args = parse_arguments()
@@ -120,6 +179,7 @@ def main():
         return handle_update_command(args)
     logger.error(f"Unknown command: {args.command}")
     return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

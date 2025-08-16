@@ -7,6 +7,7 @@ from .models import UpdateOperation
 
 logger = logging.getLogger(__name__)
 
+
 def _create_backup(target_path: str):
     """Creates a .bak backup of a file."""
     if not os.path.exists(target_path):
@@ -18,9 +19,9 @@ def _create_backup(target_path: str):
     except OSError as e:
         logger.error(f"Failed to create backup for {target_path}: {e}")
 
+
 def apply_updates(operations: List[UpdateOperation], backup: bool, dry_run: bool):
-    """Applies a list of update operations to the filesystem with safety checks.
-    """
+    """Applies a list of update operations to the filesystem with safety checks."""
     if not operations:
         return
 

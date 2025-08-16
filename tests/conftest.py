@@ -20,21 +20,13 @@ def project_structure(tmp_path: Path):
     src_dir.mkdir()
 
     (src_dir / "main.py").write_text(
-        '"""Module docstring for main."""\n'
-        'from . import utils\n'
-        'from .models import User\n\n'
-        'def main_func():\n'
-        '    """A simple function."""\n'
-        '    pass\n',
+        '"""Module docstring for main."""\nfrom . import utils\nfrom .models import User\n\ndef main_func():\n    """A simple function."""\n    pass\n',
     )
     (src_dir / "utils.py").write_text(
-        "# Header comment for utils.\n"
-        "def helper_func():\n"
-        "    pass\n",
+        "# Header comment for utils.\ndef helper_func():\n    pass\n",
     )
     (src_dir / "models.py").write_text(
-        "class User:\n"
-        "    pass\n",
+        "class User:\n    pass\n",
     )
     (src_dir / "__init__.py").touch()
 
@@ -56,4 +48,3 @@ def project_structure(tmp_path: Path):
     (git_dir / "config").touch()
 
     return project_root
-
