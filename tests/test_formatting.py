@@ -1,16 +1,22 @@
-from src.project_analyzer.models import AnalysisResult, FileInfo, FileAnalysis, AnnotationInfo
-from src.project_analyzer.formatting import tree, code, helpers
+from src.project_analyzer.formatting import code, helpers, tree
+from src.project_analyzer.models import (
+    AnalysisResult,
+    AnnotationInfo,
+    FileAnalysis,
+    FileInfo,
+)
+
 
 def test_format_tree():
     """Test the Markdown tree formatting."""
     file_tree = {
         "src": {
             "main.py": None,
-            "utils.py": None
+            "utils.py": None,
         },
-        "README.md": None
+        "README.md": None,
     }
-    
+
     # Setup mock analysis results
     main_info = FileInfo(absolute_path="", relative_path="src/main.py", filename="main.py")
     main_ann = AnnotationInfo(module_docstring="This is the main entry point.")
@@ -23,7 +29,7 @@ def test_format_tree():
         "abs/path/to/main.py": main_analysis,
         "abs/path/to/utils.py": utils_analysis,
     }
-    
+
     # Test with comments disabled
     output_no_comments = tree.format_tree_markdown(file_tree, file_details, include_comments=False)
     assert "└── README.md" in output_no_comments
@@ -42,14 +48,14 @@ def test_get_output_content():
     analysis = FileAnalysis(
         file_info=info,
         content="def my_func():\n    pass",
-        annotations=ann
+        annotations=ann,
     )
-    
+
     # Test default mode (should return full content)
     content, mode = helpers.get_output_content(analysis, None, None)
     assert mode == "default"
     assert "def my_func()" in content
-    
+
     # Test annotation stub mode
     stub_content, stub_mode = helpers.get_output_content(analysis, None, ".*") # Regex matches anything
     assert stub_mode == "annotation_stub"
@@ -59,15 +65,15 @@ def test_format_code_collection():
     """Test the aggregation of files into a single string."""
     info1 = FileInfo(absolute_path="", relative_path="a.py", filename="a.py")
     analysis1 = FileAnalysis(file_info=info1, content="print('a')")
-    
+
     info2 = FileInfo(absolute_path="", relative_path="b.py", filename="b.py")
     analysis2 = FileAnalysis(file_info=info2, content="print('b')")
 
     result = AnalysisResult(project_path="")
     result.required_files = {"path1": analysis1, "path2": analysis2}
-    
+
     output = code.format_code_collection(result)
-    
+
     assert "### File: `a.py`" in output
     assert "```python\n# source: a.py\nprint('a')\n```" in output
     assert "### File: `b.py`" in output

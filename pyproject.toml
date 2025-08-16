@@ -1,17 +1,14 @@
-# This file configures the project's build system, dependencies, and metadata.
-# It is used by modern Python packaging tools like pip and uv.
-
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-analyzer"
-version = "1.0.0"
+version = "1.1.0"
 authors = [
     { name="Your Name", email="your@email.com" },
 ]
-description = "A highly configurable tool to analyze and collect source code and data files."
+description = "A tool for analyzing and updating project files from Markdown."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -38,5 +35,76 @@ data = [
 "Bug Tracker" = "https://github.com/your-username/project-analyzer/issues"
 
 [project.scripts]
-# This creates the `project-analyzer` command in the user's PATH
-project-analyzer = "project_analyzer.cli.main:main"
+# This creates the `pr-analyze` command in the user's PATH
+pr-analyze = "project_analyzer.cli.main:main"
+pr-update = "project_analyzer.cli.main:main"
+
+
+
+[tool.ruff]
+# Set the maximum line length. 88 is the standard for Black. 99 is also common.
+line-length = 180
+
+# Assume Python 3.8+ for all checks.
+target-version = "py38"
+
+# Define where your main source code is. This helps Ruff's import resolver.
+src = ["src"]
+
+# Exclude common directories and files from linting and formatting.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint]
+# Start with a curated set of sensible, widely-accepted rules.
+# E = pycodestyle Errors
+# W = pycodestyle Warnings
+# F = Pyflakes (catches bugs like unused imports/variables)
+# I = isort (import sorting)
+# UP = pyupgrade (helps modernize code to newer Python versions)
+select = ["E", "W", "F", "I", "UP"]
+
+# You can add more rules over time. For example, to add bug-detection:
+# extend-select = ["B"]  # flake8-bugbear
+
+# Ignore specific rules globally if you disagree with them.
+# (We are not ignoring anything globally for now, which is a good starting point).
+ignore = ["E701"]
+
+
+# --- THIS IS THE MOST IMPORTANT PART ---
+# Apply different rules to different files.
+[tool.ruff.lint.per-file-ignores]
+# In test files (`tests/` or `*_test.py`), it's okay to use `assert`.
+# It's also common to have unused function arguments (e.g., for fixtures).
+"tests/**/*.py" = ["S101", "F841"]
+"*_test.py" = ["S101", "F841"]
+
+# `__init__.py` files are often used to define a package's public API,
+# so unused imports (F401) are expected and should be ignored.
+"src/project_analyzer/__init__.py" = ["F401"]
+
+
+[tool.ruff.format]
+# You can add formatting-specific settings here if needed,
+# but the defaults are usually fine. For example:
+quote-style = "double"

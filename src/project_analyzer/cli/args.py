@@ -1,138 +1,96 @@
 import argparse
 import logging
-import re
 from typing import List, Tuple
+
 from ..models import TargetSpecifier
 
 logger = logging.getLogger(__name__)
 
 def parse_target_specifier(spec: str) -> TargetSpecifier:
-    """
-    Parses a target string (e.g., "path/to/file.py:10-25,40") into a TargetSpecifier.
+    """Parses a target string (e.g., "path/to/file.py:10-25,40") into a TargetSpecifier.
     """
     path = spec
     line_ranges: List[Tuple[int, int]] = []
 
-    if ':' in spec:
-        parts = spec.split(':', 1)
+    if ":" in spec:
+        parts = spec.split(":", 1)
         path, line_part = parts[0], parts[1]
-
         try:
-            for range_str in line_part.split(','):
-                range_str = range_str.strip()
-                if '-' in range_str:
-                    start_str, end_str = range_str.split('-', 1)
-                    start = int(start_str)
-                    end = int(end_str)
-                    if start > end:
-                        raise ValueError(f"Start line cannot be greater than end line: {range_str}")
-                    line_ranges.append((start, end))
+            for range_str in line_part.split(","):
+                if "-" in range_str:
+                    start_str, end_str = range_str.split("-", 1)
+                    line_ranges.append((int(start_str), int(end_str)))
                 else:
                     line_num = int(range_str)
                     line_ranges.append((line_num, line_num))
-        except ValueError as e:
-            logger.error(f"Invalid line range format in '{spec}': {e}. Ignoring line specifier.")
-            # Reset path to the full specifier if parsing fails, treating it as a plain path
+        except ValueError:
+            logger.warning(f"Invalid line range format in '{spec}'. Treating as a simple path.")
             return TargetSpecifier(path=spec)
 
     return TargetSpecifier(path=path, line_ranges=line_ranges)
 
 def parse_arguments() -> argparse.Namespace:
-    """
-    Defines and configures the argument parser for the CLI.
+    """Defines and configures the argument parser with sub-commands.
     """
     parser = argparse.ArgumentParser(
-        description="A highly configurable tool to analyze and collect source code and data files.",
-        formatter_class=argparse.RawTextHelpFormatter  # Allows for better formatting of help text
+        description="A tool for analyzing and updating project files.",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
+    subparsers = parser.add_subparsers(dest="command", required=True, help="Available commands")
 
-    parser.add_argument(
-        'targets',
-        nargs='*',
-        default=['.'],
+    # --- ANALYZE Sub-command ---
+    analyze_parser = subparsers.add_parser(
+        "analyze",
+        help="Analyze project files and generate reports.",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    analyze_parser.add_argument(
+        "targets",
+        nargs="*",
+        default=["."],
         help='One or more targets to analyze. Can be:\n'
              '- A directory path (e.g., src/)\n'
              '- A file path (e.g., src/main.py)\n'
-             '- A file with line ranges (e.g., "src/main.py:10-50,75-80")'
+             '- A file with line ranges (e.g., "src/main.py:10-50")',
     )
-
-    parser.add_argument(
-        '-o', '--output',
-        help='Output destination. A path to a file (.md) or a directory.\n'
-             'Required if targets are specified beyond the default.'
+    analyze_parser.add_argument(
+        "-o", "--output",
+        help="Output destination. A path to a file (.md) or a directory.",
     )
-
-    # --- File Selection Group ---
-    file_selection = parser.add_argument_group('File Selection')
-    file_selection.add_argument(
-        '--include',
-        nargs='+',
-        metavar='PATTERN',
-        help='Glob patterns for files to forcefully include (e.g., "**/*.py", "docs/**/*.md").'
-    )
-    file_selection.add_argument(
-        '--exclude',
-        nargs='+',
-        metavar='PATTERN',
-        help='Glob patterns to explicitly exclude (e.g., "**/test_*.py", "*.tmp").'
-    )
-    file_selection.add_argument(
-        '-d', '--depth',
-        type=int,
-        default=-1,
-        help='Max depth for dependency resolution (-1 for unlimited, 0 to disable).'
-    )
-
-    # --- Output Formatting Group ---
-    output_formatting = parser.add_argument_group('Output Formatting')
-    output_formatting.add_argument(
-        '-c', '--comments',
-        action='store_true',
-        help='Include summary comments from docstrings in the file tree view.'
-    )
-    output_formatting.add_argument(
-        '-a', '--annotations',
-        action='store_true',
-        help='In directory output, add an OUT.md with a detailed annotation report.'
-    )
-    output_formatting.add_argument(
-        '--full-code-regex',
-        metavar='REGEX',
-        help='Regex pattern. Files with a relative path matching this will include their full code.'
-    )
-    output_formatting.add_argument(
-        '--annotation-regex',
-        metavar='REGEX',
-        help='Regex pattern. Python files matching this will be output as stubs (annotations only).'
-    )
-
-    # --- Alternate Modes Group ---
-    alternate_modes = parser.add_argument_group('Alternate Modes')
+    # File Selection Group for Analyze
+    file_selection = analyze_parser.add_argument_group("File Selection")
+    file_selection.add_argument("--include", nargs="+", metavar="PATTERN", help="Glob patterns to forcefully include.")
+    file_selection.add_argument("--exclude", nargs="+", metavar="PATTERN", help="Glob patterns to explicitly exclude.")
+    file_selection.add_argument("-d", "--depth", type=int, default=-1, help="Max depth for dependency resolution.")
+    # Output Formatting Group for Analyze
+    output_formatting = analyze_parser.add_argument_group("Output Formatting")
+    output_formatting.add_argument("-c", "--comments", action="store_true", help="Include summary comments in the file tree.")
+    output_formatting.add_argument("-a", "--annotations", action="store_true", help="Add a detailed OUT.md annotations report.")
+    output_formatting.add_argument("--full-code-regex", metavar="REGEX", help="Regex for files to include full code.")
+    output_formatting.add_argument("--annotation-regex", metavar="REGEX", help="Regex for files to show as stubs.")
+    # Alternate Modes Group for Analyze
+    alternate_modes = analyze_parser.add_argument_group("Alternate Modes")
     alternate_modes.add_argument(
-        '--generate-summary',
-        metavar='FILENAME',
-        nargs='?',
-        const="claude.md",
-        default=None,
-        help='Generate a summary file (default: claude.md) with the project README and file tree.\nOverrides other output options.'
+        "--generate-summary", metavar="FILENAME", nargs="?",
+        const="claude.md", default=None,
+        help="Generate a summary file (default: claude.md)."
     )
+    # Logging Group (shared)
+    for p in [analyze_parser]:
+        logging_group = p.add_argument_group("Logging")
+        logging_group.add_argument("-v", "--verbose", action="store_true", help="Enable verbose console logging.")
+        logging_group.add_argument("--logs", action="store_true", help="Enable writing logs to a file.")
+        logging_group.add_argument("--log-file", default="pr-analyze_log.txt", help="Specify the log file path.")
 
-    # --- Logging Group ---
-    logging_group = parser.add_argument_group('Logging')
-    logging_group.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Enable verbose console logging (DEBUG level).'
+    # --- UPDATE Sub-command ---
+    update_parser = subparsers.add_parser(
+        "update",
+        help="Update local files from a Markdown document via stdin.",
+        description="Updates local files by reading a specially formatted Markdown document from standard input (stdin).",
+        epilog="Example:\n  cat your_changes.md | pr-analyze update",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
-    logging_group.add_argument(
-        '--logs',
-        action='store_true',
-        help='Enable writing detailed logs to a file.'
-    )
-    logging_group.add_argument(
-        '--log-file',
-        default="project_analyzer_log.txt",
-        help='Specify the log file path (default: project_analyzer_log.txt).'
-    )
+    update_parser.add_argument("--backup", action="store_true", help="Create a .bak backup of each file before modifying it.")
+    update_parser.add_argument("--dry-run", action="store_true", help="Show what would be modified without writing any changes.")
 
     return parser.parse_args()

@@ -1,10 +1,10 @@
-import os
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
+from src.project_analyzer.models import FileInfo
 from src.project_analyzer.utils import config, helpers
 from src.project_analyzer.utils.file_cache import FileCache
-from src.project_analyzer.models import FileInfo
+
 
 def test_load_project_config(project_structure: Path):
     """Test loading of .claudeignore and .claudeallow files."""
@@ -18,19 +18,19 @@ def test_load_project_config(project_structure: Path):
 def test_is_path_ignored():
     """Test the path ignoring logic with various patterns."""
     ignore_patterns = {"build/", "*.log", "docs/internal"}
-    
+
     # Test hardcoded ignores
     assert helpers.is_path_ignored(".git/config", "/root", ignore_patterns) is True
     assert helpers.is_path_ignored("__pycache__/cache", "/root", ignore_patterns) is True
-    
+
     # Test default patterns
     assert helpers.is_path_ignored("file.pyc", "/root", ignore_patterns) is True
-    
+
     # Test custom patterns
     assert helpers.is_path_ignored("build/output.txt", "/root", ignore_patterns) is True
     assert helpers.is_path_ignored("app.log", "/root", ignore_patterns) is True
     assert helpers.is_path_ignored("docs/internal/api.md", "/root", ignore_patterns) is True
-    
+
     # Test paths that should NOT be ignored
     assert helpers.is_path_ignored("src/main.py", "/root", ignore_patterns) is False
     assert helpers.is_path_ignored("docs/public/guide.md", "/root", ignore_patterns) is False
@@ -43,7 +43,7 @@ def test_build_file_tree():
         FileInfo(absolute_path="/proj/README.md", relative_path="README.md", filename="README.md"),
     ]
     tree = helpers.build_file_tree(file_infos)
-    
+
     assert "README.md" in tree
     assert "src" in tree
     assert isinstance(tree["src"], dict)
@@ -61,7 +61,7 @@ def test_file_cache(tmp_path: Path):
     with patch("builtins.open", mock_open(read_data="hello world")) as mocked_open:
         # First call should read from disk
         content1 = cache.get_content(str(test_file))
-        mocked_open.assert_called_once_with(str(test_file), 'r', encoding='utf-8', errors='ignore')
+        mocked_open.assert_called_once_with(str(test_file), "r", encoding="utf-8", errors="ignore")
         assert content1 == "hello world"
 
         # Second call should hit the cache

@@ -1,6 +1,7 @@
 from src.project_analyzer.cli import args
 from src.project_analyzer.models import TargetSpecifier
 
+
 def test_parse_target_specifier_simple_path():
     """Test parsing a simple file path."""
     spec = "src/main.py"
@@ -37,7 +38,7 @@ def test_argument_parser(monkeypatch):
             "--depth",
             "5",
             "--logs",
-            "-v"
+            "-v",
         ],
     )
     parsed_args = args.parse_arguments()

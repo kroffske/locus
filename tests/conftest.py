@@ -1,10 +1,11 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 
 @pytest.fixture
 def project_structure(tmp_path: Path):
-    """
-    Creates a temporary, realistic project directory structure for testing.
+    """Creates a temporary, realistic project directory structure for testing.
     Returns the root path of the created project.
     """
     project_root = tmp_path / "test_project"
@@ -24,26 +25,26 @@ def project_structure(tmp_path: Path):
         'from .models import User\n\n'
         'def main_func():\n'
         '    """A simple function."""\n'
-        '    pass\n'
+        '    pass\n',
     )
     (src_dir / "utils.py").write_text(
-        '# Header comment for utils.\n'
-        'def helper_func():\n'
-        '    pass\n'
+        "# Header comment for utils.\n"
+        "def helper_func():\n"
+        "    pass\n",
     )
     (src_dir / "models.py").write_text(
-        'class User:\n'
-        '    pass\n'
+        "class User:\n"
+        "    pass\n",
     )
     (src_dir / "__init__.py").touch()
-    
+
     # --- Create ignored files and directories ---
     (project_root / "README.md").write_text("# Test Project")
     (project_root / "app.log").write_text("log entry")
     build_dir = project_root / "build"
     build_dir.mkdir()
     (build_dir / "output.bin").touch()
-    
+
     # --- Create data files ---
     data_dir = project_root / "data"
     data_dir.mkdir()
@@ -53,6 +54,6 @@ def project_structure(tmp_path: Path):
     git_dir = project_root / ".git"
     git_dir.mkdir()
     (git_dir / "config").touch()
-    
+
     return project_root
 
