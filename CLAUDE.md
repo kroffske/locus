@@ -48,24 +48,65 @@ ruff format --check src/ tests/
 ```
 
 ### Using the Tool
+
+#### Interactive Mode (Terminal Output)
 ```bash
-# Analyze current directory
-pr-analyze analyze .
+# Quick overview of current directory
+pr-analyze analyze
 
-# Analyze with dependency resolution
-pr-analyze analyze src/ -d 2
+# Analyze specific directory
+pr-analyze analyze src/
 
-# Generate output file
-pr-analyze analyze src/ -o analysis.md
+# Include file comments in tree
+pr-analyze analyze -c
 
+# Force include README when piping
+pr-analyze analyze --with-readme | less
+```
+
+#### Report Mode (Markdown File)
+```bash
+# Full report with all code (default)
+pr-analyze analyze -o analysis.md
+
+# Minimal report (tree + README only)
+pr-analyze analyze -o summary.md --style minimal
+
+# Annotations only (function/class signatures)
+pr-analyze analyze -o structure.md --style annotations
+
+# Report without README
+pr-analyze analyze -o code.md --skip-readme
+
+# With dependency resolution
+pr-analyze analyze src/ -o report.md -d 2
+```
+
+#### Collection Mode (Flat Directory Export)
+```bash
+# Export files to flat directory
+pr-analyze analyze -o output/
+
+# Add annotations report
+pr-analyze analyze -o output/ --add-annotations
+
+# Export without README
+pr-analyze analyze -o output/ --skip-readme
+```
+
+#### Update Mode
+```bash
 # Apply updates from markdown
 cat changes.md | pr-analyze update --dry-run
+cat changes.md | pr-analyze update --backup
 ```
 
 ## Architecture
 
 ### Core Processing Flow
 1. **Orchestrator** (`src/project_analyzer/core/orchestrator.py`) - Coordinates the entire analysis workflow
+   - Automatically discovers and reads README files (README.md, .rst, .txt)
+   - Stores README content in `AnalysisResult.project_readme_content`
 2. **Scanner** (`src/project_analyzer/core/scanner.py`) - Discovers files using pattern matching
 3. **Resolver** (`src/project_analyzer/core/resolver.py`) - Handles dependency resolution for Python imports
 4. **Processor** (`src/project_analyzer/core/processor.py`) - Analyzes individual files and extracts metadata
@@ -76,7 +117,7 @@ cat changes.md | pr-analyze update --dry-run
 - All data structures use Pydantic models for validation
 - `TargetSpecifier` handles complex file:line_range specifications
 - `FileAnalysis` combines file metadata with content and annotations
-- `AnalysisResult` aggregates all analysis outputs
+- `AnalysisResult` aggregates all analysis outputs and includes `project_readme_content`
 
 **Configuration System**:
 - `.claudeallow` and `.claudeignore` files control file inclusion/exclusion
@@ -86,6 +127,12 @@ cat changes.md | pr-analyze update --dry-run
 **CLI Structure** (`src/project_analyzer/cli/`):
 - Uses argparse for command parsing
 - Subcommands: `analyze` and `update`
+- Mode detection based on output destination:
+  - No `-o`: Interactive mode (stdout)
+  - `-o file.md`: Report mode
+  - `-o directory/`: Collection mode (flat structure)
+- Content styles: `--style {full|annotations|minimal}`
+- README control: `--skip-readme`, `--with-readme`
 - Rich formatting for interactive output
 
 ### Testing Approach
@@ -103,11 +150,25 @@ Tests use pytest with a comprehensive fixture system:
 - Binary files are detected and handled separately
 - Encoding detection with fallback to handle various text formats
 
+### README Integration
+- Automatically searches for README files in project root
+- Priority order: README.md > README.rst > README.txt > README
+- Case-insensitive matching for flexibility
+- Smart defaults: includes in TTY output, excludes when piped
+- Stored in `AnalysisResult.project_readme_content`
+
 ### Dependency Resolution
 - Follows Python imports recursively to specified depth
 - Handles relative and absolute imports
 - Avoids circular dependencies through visited tracking
 - Can be disabled with `-d 0` for faster analysis
+
+### Collection Mode Export
+- Files exported with flat structure (no subdirectories)
+- Path separators replaced with underscores
+- Example: `src/utils/helpers.py` → `src_utils_helpers.py`
+- README.md copied to output unless `--skip-readme`
+- Optional OUT.md annotations with `--add-annotations`
 
 ### Update Mechanism
 The update command expects Markdown with specific format:
@@ -115,3 +176,23 @@ The update command expects Markdown with specific format:
 - Code in fenced blocks with optional language hints
 - Supports creating new files and modifying existing ones
 - Always prompts for confirmation unless `--dry-run` is used
+
+## CLI Modes and Options
+
+### Output Modes
+- **Interactive Mode**: Default when no `-o` specified, outputs to terminal
+- **Report Mode**: When `-o file.md` specified, creates comprehensive markdown
+- **Collection Mode**: When `-o directory/` specified, exports files with flat structure
+
+### Style Options (`--style`)
+- **full** (default): Include README, tree, and complete source code
+- **annotations**: Include README, tree, and function/class signatures only
+- **minimal**: Include README and tree only (no code)
+
+### README Control
+- **--skip-readme**: Exclude README from any output
+- **--with-readme**: Force include README (useful when piping)
+- Smart defaults: Includes README in TTY, excludes when piped
+
+### Deprecated Features
+- `--generate-summary`: Use `-o file.md --style minimal` instead
