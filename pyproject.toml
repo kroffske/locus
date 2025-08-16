@@ -1,0 +1,42 @@
+# This file configures the project's build system, dependencies, and metadata.
+# It is used by modern Python packaging tools like pip and uv.
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-analyzer"
+version = "1.0.0"
+authors = [
+    { name="Your Name", email="your@email.com" },
+]
+description = "A highly configurable tool to analyze and collect source code and data files."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+]
+# Core dependencies
+dependencies = []
+
+[project.optional-dependencies]
+# Optional dependencies for data file previews
+data = [
+    "pandas",
+    "pyarrow",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/your-username/project-analyzer"
+"Bug Tracker" = "https://github.com/your-username/project-analyzer/issues"
+
+[project.scripts]
+# This creates the `project-analyzer` command in the user's PATH
+project-analyzer = "project_analyzer.cli.main:main"
