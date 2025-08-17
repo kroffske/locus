@@ -23,6 +23,17 @@ def generate_full_report(
     parts = ["# Code Analysis Report"]
     parts.append(f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
+    # Add LLM instructions for code modifications
+    parts.append("## Instructions for LLM Code Modifications\n")
+    parts.append("When providing code changes or new files, use the following format for each file:")
+    parts.append("```")
+    parts.append("```python")
+    parts.append("# source: path/to/file.py")
+    parts.append("# Complete code content here - do not skip any lines")
+    parts.append("```")
+    parts.append("```")
+    parts.append("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n")
+
     # Add README content first if available
     if include_readme and result.project_readme_content:
         parts.extend(["## Project Documentation\n", result.project_readme_content, "\n---\n"])
@@ -53,6 +64,16 @@ def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: s
             if result.project_readme_content:
                 f.write(f"{result.project_readme_content}\n\n---\n\n")
 
+            f.write("## Instructions for LLM Code Modifications\n\n")
+            f.write("When providing code changes or new files, use the following format for each file:\n")
+            f.write("```\n")
+            f.write("```python\n")
+            f.write("# source: path/to/file.py\n")
+            f.write("# Complete code content here - do not skip any lines\n")
+            f.write("```\n")
+            f.write("```\n")
+            f.write("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n\n")
+
             f.write("## Project File Structure\n\n")
             if result.file_tree:
                 tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, include_comments)
@@ -69,6 +90,7 @@ def generate_annotations_report_file(result: AnalysisResult, output_dir: str, fi
     """Generates a dedicated OUT.md file with annotations."""
     report_path = os.path.join(output_dir, filename)
     logger.info(f"Generating annotations report: {report_path}")
+    # Instructions are already included in generate_annotations_report_str
     content = generate_annotations_report_str(result)
     try:
         with open(report_path, "w", encoding="utf-8") as f:
@@ -88,6 +110,15 @@ def generate_annotations_report_str(result: AnalysisResult) -> str:
     parts = ["## Detailed Annotations"]
     parts.append("\nThe following shows the structure and documentation of all analyzed Python files.")
     parts.append("Each file contains function and class signatures with their docstrings, without implementation details.\n")
+    parts.append("### Instructions for LLM Code Modifications\n")
+    parts.append("When providing code changes or new files based on these annotations, use the following format:")
+    parts.append("```")
+    parts.append("```python")
+    parts.append("# source: path/to/file.py")
+    parts.append("# Complete code content here - do not skip any lines")
+    parts.append("```")
+    parts.append("```")
+    parts.append("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n")
     parts.append("```python")
 
     for analysis in sorted(annotated, key=lambda fa: fa.file_info.relative_path):
