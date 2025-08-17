@@ -204,22 +204,28 @@ cat changes.md | locus update --backup
 
 #### Markdown Format
 
-The update command expects Markdown with the following format:
+The update command expects Markdown with code blocks where the first line contains the file path:
 
 ````markdown
-### File: `path/to/file.py`
 ```python
+# source: path/to/file.py
 # New or updated file content goes here
 def my_function():
     return "Hello, World!"
 ```
 
-### File: `another/file.js`
 ```javascript
+# source: another/file.js
 // JavaScript content
 console.log("Updated!");
 ```
 ````
+
+The format is:
+- Each code block represents one file to update
+- First line must start with `# source:` followed by the file path
+- The rest of the code block contains the complete file content
+- Multiple code blocks can be included in one Markdown document
 
 ## Configuration Files
 
