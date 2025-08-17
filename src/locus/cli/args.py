@@ -89,6 +89,7 @@ def parse_arguments() -> argparse.Namespace:
         logging_group.add_argument("-v", "--verbose", action="store_true", help="Enable verbose console logging.")
         logging_group.add_argument("--logs", action="store_true", help="Enable writing logs to a file.")
         logging_group.add_argument("--log-file", default="pr-analyze_log.txt", help="Specify the log file path.")
+        logging_group.add_argument("--no-color", action="store_true", help="Disable colored terminal output.")
 
     # --- UPDATE Sub-command ---
     update_parser = subparsers.add_parser(
@@ -100,5 +101,6 @@ def parse_arguments() -> argparse.Namespace:
     )
     update_parser.add_argument("--backup", action="store_true", help="Create a .bak backup of each file before modifying it.")
     update_parser.add_argument("--dry-run", action="store_true", help="Show what would be modified without writing any changes.")
+    update_parser.add_argument("--no-color", action="store_true", help="Disable colored terminal output.")
 
     return parser.parse_args()

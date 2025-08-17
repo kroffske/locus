@@ -45,7 +45,7 @@ def collect_files_to_directory(
         # Create flat filename by replacing path separators with underscores
         flat_filename = analysis.file_info.relative_path.replace(os.sep, "_").replace("/", "_")
         target_path = os.path.join(output_dir, flat_filename)
-        
+
         try:
             with open(target_path, "w", encoding="utf-8") as f:
                 f.write(content)

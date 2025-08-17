@@ -3,6 +3,7 @@ import os
 import shutil
 from typing import List
 
+from ..formatting.colors import confirm, print_error, print_file_status, print_header, print_info, print_success, print_warning
 from .models import UpdateOperation
 
 logger = logging.getLogger(__name__)
@@ -25,27 +26,25 @@ def apply_updates(operations: List[UpdateOperation], backup: bool, dry_run: bool
     if not operations:
         return
 
-    print("The following file changes are proposed:")
+    print_header("Proposed File Changes")
     for op in operations:
         op.is_new_file = not os.path.exists(op.target_path)
         status = "CREATE" if op.is_new_file else "UPDATE"
-        print(f"  - {status}: {op.target_path}")
+        print_file_status(status, op.target_path)
 
     if dry_run:
-        print("\n[DRY RUN] No files will be changed.")
+        print_warning("\nDRY RUN - No files will be changed")
         return
 
     try:
-        confirm = input("\nDo you want to apply these changes? [y/N]: ").lower().strip()
+        if not confirm("\nDo you want to apply these changes?"):
+            print_warning("Update cancelled.")
+            return
     except (EOFError, KeyboardInterrupt):
-        print("\nUpdate cancelled by user.")
+        print_error("\nUpdate cancelled by user.")
         return
 
-    if confirm != "y":
-        print("Update cancelled.")
-        return
-
-    print("\nApplying changes...")
+    print_info("\nApplying changes...")
     for op in operations:
         try:
             # Ensure target directory exists
@@ -62,8 +61,8 @@ def apply_updates(operations: List[UpdateOperation], backup: bool, dry_run: bool
                 f.write(op.new_content)
 
             status = "CREATED" if op.is_new_file else "UPDATED"
-            logger.info(f"{status}: {op.target_path}")
+            print_file_status(status, op.target_path)
         except OSError as e:
             logger.error(f"Failed to write to {op.target_path}: {e}")
 
-    print("\nUpdate process complete.")
+    print_success("\nUpdate process complete!")

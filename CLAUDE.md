@@ -120,8 +120,9 @@ cat changes.md | locus update --backup
 - `AnalysisResult` aggregates all analysis outputs and includes `project_readme_content`
 
 **Configuration System**:
-- `.claudeallow` and `.claudeignore` files control file inclusion/exclusion
-- Pattern matching uses glob patterns with fallback defaults
+- `.lotusallow` and `.lotusignore` files control file inclusion/exclusion (with `.claudeallow`/`.claudeignore` as fallback for compatibility)
+- Default config files are automatically created on first run if they don't exist
+- Pattern matching uses glob patterns with sensible defaults
 - Configuration is loaded once and passed through the pipeline
 
 **CLI Structure** (`src/locus/cli/`):

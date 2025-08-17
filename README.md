@@ -223,27 +223,35 @@ console.log("Updated!");
 
 ## Configuration Files
 
-### `.claudeallow`
+Locus uses configuration files to control which files are included or excluded from analysis. These files are automatically created with sensible defaults on first run if they don't exist.
 
-Specifies glob patterns for files to include in analysis. One pattern per line:
+### `.lotusallow` (or `.claudeallow` for compatibility)
 
+Specifies glob patterns for files to include in analysis. One pattern per line. If neither `.lotusallow` nor `.claudeallow` exists, a default `.lotusallow` file will be created with common source code patterns.
+
+Example:
 ```
+# File patterns to include
 **/*.py
 **/*.js
 **/*.md
 **/README*
 ```
 
-### `.claudeignore`
+### `.lotusignore` (or `.claudeignore` for compatibility)  
 
-Specifies patterns for files to exclude from analysis. One pattern per line:
+Specifies patterns for files to exclude from analysis. One pattern per line. If neither `.lotusignore` nor `.claudeignore` exists, a default `.lotusignore` file will be created excluding common build artifacts and dependencies.
 
+Example:
 ```
+# Patterns to exclude
 **/__pycache__/**
 **/node_modules/**
 **/*.pyc
 **/.git/**
 ```
+
+**Note**: The tool checks for `.lotusallow`/`.lotusignore` first, then falls back to `.claudeallow`/`.claudeignore` for backward compatibility. You can rename your existing `.claude*` files to `.lotus*` if you prefer the new naming.
 
 ## Advanced Features
 

@@ -4,9 +4,16 @@ import sys
 
 from ..core.orchestrator import analyze
 from ..formatting import code, report, tree
+from ..formatting.colors import (
+    console,
+    print_divider,
+    print_header,
+    print_info,
+    setup_rich_logging,
+)
 from ..updater import parser as updater_parser
 from ..updater import writer as updater_writer
-from ..utils.helpers import compile_regex, setup_logging
+from ..utils.helpers import compile_regex
 from .args import parse_arguments, parse_target_specifier
 
 logger = logging.getLogger(__name__)
@@ -71,15 +78,20 @@ def handle_analyze_command(args):
 
     try:
         if mode == "interactive":
-            # Interactive mode: print to stdout
+            # Interactive mode: print to stdout with colors
             if include_readme and result.project_readme_content:
-                print("## Project README\n")
-                print(result.project_readme_content)
-                print("\n---\n")
+                print_header("Project README")
+                console.print(result.project_readme_content)
+                print_divider()
             if result.file_tree:
-                print("## Project Structure")
+                print_header("Project Structure")
                 tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, args.comments)
-                print(tree_md)
+                # Use safe print method for tree to handle Unicode properly
+                try:
+                    console.print(tree_md, style="tree")
+                except UnicodeEncodeError:
+                    # Fallback to regular print if console has issues
+                    print(tree_md)
 
         elif mode == "report":
             # Report mode: write to file
@@ -130,15 +142,15 @@ def handle_analyze_command(args):
 
 def handle_update_command(args):
     """Orchestrates the 'update' command workflow."""
-    logger.info("Reading from standard input to update files...")
     if sys.stdin.isatty():
-        logger.error("Error: No input provided. Pipe a Markdown file to this command.")
-        print("Example: cat your_changes.md | pr-analyze update")
-        return 1
+        print_info("Paste your Markdown content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) when done:")
+        print_divider()
+    else:
+        logger.info("Reading from standard input to update files...")
 
     markdown_content = sys.stdin.read()
     if not markdown_content:
-        logger.error("Error: Standard input was empty.")
+        logger.error("Error: No input provided.")
         return 1
 
     try:
@@ -162,6 +174,19 @@ def main():
     """Main entry point for the CLI."""
     args = parse_arguments()
 
+    # Handle no-color flag (must be done before importing color utilities)
+    no_color = getattr(args, "no_color", False)
+    if no_color:
+        import os
+
+        os.environ["NO_COLOR"] = "1"
+        # Reload the colors module to pick up the environment variable
+        from importlib import reload
+
+        from ..formatting import colors
+
+        reload(colors)
+
     # Setup logging based on shared args if they exist
     verbose = getattr(args, "verbose", False)
     enable_logs = getattr(args, "logs", False)
@@ -169,9 +194,9 @@ def main():
 
     log_level = "DEBUG" if verbose else "INFO"
     if enable_logs:
-        setup_logging(level=log_level, log_file=log_file)
+        setup_rich_logging(level=log_level, log_file=log_file)
     else:
-        setup_logging(level=log_level, log_format="%(message)s")
+        setup_rich_logging(level=log_level)
 
     if args.command == "analyze":
         return handle_analyze_command(args)
