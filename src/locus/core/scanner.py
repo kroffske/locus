@@ -25,7 +25,17 @@ def scan_directory(
 
         for file in files:
             abs_path = os.path.join(root, file)
-            rel_path = helpers.get_relative_path(abs_path, project_path)
+            
+            # Skip special Windows device files like NUL, CON, PRN, etc.
+            if os.name == 'nt' and file.upper() in ['NUL', 'CON', 'PRN', 'AUX', 'COM1', 'COM2', 'COM3', 'COM4', 'LPT1', 'LPT2', 'LPT3']:
+                logger.debug(f"Skipping Windows device file: {file}")
+                continue
+            
+            try:
+                rel_path = helpers.get_relative_path(abs_path, project_path)
+            except (ValueError, OSError) as e:
+                logger.warning(f"Skipping file due to path error: {abs_path} - {e}")
+                continue
 
             if helpers.is_path_ignored(rel_path, ignore_patterns):
                 continue
