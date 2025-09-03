@@ -56,7 +56,7 @@ class FileCache:
                         self.content_cache[file_path] = None
                         return None
 
-            with open(file_path, encoding="utf-8", errors="ignore") as f:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
             self.content_cache[file_path] = content
             return content
@@ -64,3 +64,7 @@ class FileCache:
             logger.error(f"Error reading file {file_path}: {e}")
             self.content_cache[file_path] = None
             return None
+
+    def clear(self) -> None:
+        """Clears the in-memory caches."""
+        self.content_cache.clear()

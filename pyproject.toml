@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locus-analyzer"
-version = "0.1.1"
+version = "0.2.1"
 authors = [
     { name="Your Name", email="your@email.com" },
 ]
@@ -30,6 +30,10 @@ dependencies = [
 data = [
     "pandas",
     "pyarrow",
+]
+dev = [
+    "ruff>=0.4.0",
+    "black>=24.1.0",
 ]
 
 [project.urls]
@@ -109,3 +113,8 @@ ignore = ["E701"]
 # You can add formatting-specific settings here if needed,
 # but the defaults are usually fine. For example:
 quote-style = "double"
+
+[tool.black]
+line-length = 180
+target-version = ["py38"]
+include = '(src|tests)/.*\.py$'
