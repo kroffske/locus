@@ -25,18 +25,18 @@ def scan_directory(
 
         for file in files:
             abs_path = os.path.join(root, file)
-            
+
             # Skip special Windows device files
-            if os.name == 'nt' and 'NUL' in abs_path.upper():
+            if os.name == "nt" and "NUL" in abs_path.upper():
                 continue
-                
+
             try:
                 rel_path = helpers.get_relative_path(abs_path, project_path)
             except ValueError:
                 # Skip files that can't be made relative (e.g., on different drives or special files)
                 continue
 
-            if helpers.is_path_ignored(rel_path, ignore_patterns):
+            if helpers.is_path_ignored(rel_path, None, ignore_patterns):
                 continue
 
             rel_path_norm = rel_path.replace("\\", "/")

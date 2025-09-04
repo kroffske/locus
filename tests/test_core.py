@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-from src.locus.core import orchestrator, resolver, scanner
-from src.locus.models import TargetSpecifier
+from locus.core import orchestrator, resolver, scanner
+from locus.models import TargetSpecifier
 
 
 def test_scanner(project_structure: Path):

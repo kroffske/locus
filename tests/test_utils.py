@@ -1,9 +1,9 @@
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
-from src.locus.models import FileInfo
-from src.locus.utils import config, helpers
-from src.locus.utils.file_cache import FileCache
+from locus.models import FileInfo
+from locus.utils import config, helpers
+from locus.utils.file_cache import FileCache
 
 
 def test_load_project_config(project_structure: Path):

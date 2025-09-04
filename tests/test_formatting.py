@@ -1,5 +1,5 @@
-from src.locus.formatting import code, helpers, tree
-from src.locus.models import (
+from locus.formatting import code, helpers, tree
+from locus.models import (
     AnalysisResult,
     AnnotationInfo,
     FileAnalysis,
@@ -32,8 +32,8 @@ def test_format_tree():
 
     # Test with comments disabled
     output_no_comments = tree.format_tree_markdown(file_tree, file_details, include_comments=False)
-    assert "└── README.md" in output_no_comments
-    assert "├── src/" in output_no_comments
+    assert "├── README.md" in output_no_comments
+    assert "└── src/" in output_no_comments
     assert "#" not in output_no_comments
 
     # Test with comments enabled
@@ -80,3 +80,20 @@ def test_format_code_collection():
     assert "```python\n# source: a.py\nprint('a')\n```" in output
     assert "### File: `b.py`" in output
     assert "```python\n# source: b.py\nprint('b')\n```" in output
+
+
+def test_line_range_slicing():
+    """Selected line ranges should slice content in output."""
+    info = FileInfo(absolute_path="", relative_path="mod.py", filename="mod.py")
+    content = "\n".join([f"L{i}" for i in range(1, 21)])
+    analysis = FileAnalysis(file_info=info, content=content, line_ranges=[(3, 5), (10, 10)])
+
+    result = AnalysisResult(project_path="")
+    result.required_files = {"p": analysis}
+
+    out = code.format_code_collection(result)
+    assert "# source: mod.py" in out
+    # Lines 3..5 and line 10 should be present
+    assert "L3" in out and "L4" in out and "L5" in out and "L10" in out
+    # A line not in the ranges should be absent
+    assert "L2" not in out and "L6" not in out and "L11" not in out

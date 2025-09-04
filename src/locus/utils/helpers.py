@@ -80,7 +80,7 @@ def get_module_name(relative_path: str) -> Optional[str]:
     return module_path.replace(os.sep, ".")
 
 
-def is_path_ignored(relative_path: str, ignore_patterns: Set[str]) -> bool:
+def is_path_ignored(relative_path: str, project_root: Optional[str], ignore_patterns: Set[str]) -> bool:
     """Checks if a path should be ignored based on default and custom rules."""
     path_parts = set(relative_path.replace("\\", "/").split("/"))
 
@@ -92,7 +92,17 @@ def is_path_ignored(relative_path: str, ignore_patterns: Set[str]) -> bool:
         return True
 
     norm_rel_path = relative_path.replace("\\", "/")
-    return any(fnmatch.fnmatch(norm_rel_path, pattern) for pattern in ignore_patterns)
+    for pattern in ignore_patterns:
+        # Glob patterns
+        if any(ch in pattern for ch in "*?["):
+            if fnmatch.fnmatch(norm_rel_path, pattern) or fnmatch.fnmatch(basename, pattern):
+                return True
+            continue
+        # Directory-style patterns (with or without trailing slash)
+        pat = pattern.rstrip("/")
+        if norm_rel_path == pat or norm_rel_path.startswith(pat + "/"):
+            return True
+    return False
 
 
 def build_file_tree(file_infos: List[FileInfo]) -> Dict[str, Any]:

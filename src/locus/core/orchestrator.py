@@ -1,3 +1,12 @@
+"""High-level orchestration for project analysis.
+
+- Reads configuration from the repository root (walks upward),
+  while allowing analysis to start in a subdirectory (e.g., `src/`).
+- Builds tree and gathers header preamble/docstrings for summaries.
+"""
+
+# Preamble: orchestrator wires scanning, resolving, and processing together.
+
 import glob
 import logging
 import os
@@ -44,6 +53,27 @@ def find_and_read_readme(project_path: str) -> Optional[str]:
     return None
 
 
+def _find_config_root(start_path: str) -> str:
+    """Finds the directory to load config from by walking up for .locus*/.claude* or .git.
+    Falls back to current working directory if nothing is found.
+    """
+    cur = os.path.abspath(start_path)
+    root = os.path.abspath(os.path.sep)
+    while True:
+        candidates = [
+            os.path.join(cur, ".locusallow"),
+            os.path.join(cur, ".locusignore"),
+            os.path.join(cur, ".claudeallow"),
+            os.path.join(cur, ".claudeignore"),
+        ]
+        if any(os.path.exists(p) for p in candidates) or os.path.isdir(os.path.join(cur, ".git")):
+            return cur
+        if cur == root:
+            break
+        cur = os.path.dirname(cur)
+    return os.getcwd()
+
+
 def analyze(
     project_path: str,
     target_specs: List[TargetSpecifier],
@@ -55,11 +85,16 @@ def analyze(
     result = AnalysisResult(project_path=project_path, target_specs=target_specs)
     file_cache = FileCache()
 
-    # Read README file if present
-    result.project_readme_content = find_and_read_readme(project_path)
+    # Read README file from config root if present
+    # (docs are considered at repository root)
+    # We'll set project_readme_content after determining config_root below.
 
-    # 1. Load Configuration
-    ignore_patterns, allow_patterns = config.load_project_config(project_path)
+    # 1. Load Configuration (from repository root, not necessarily project_path)
+    config_root = _find_config_root(project_path)
+    result.config_root_path = config_root
+    ignore_patterns, allow_patterns = config.load_project_config(config_root)
+    # Load README from config root
+    result.project_readme_content = find_and_read_readme(config_root)
     if not allow_patterns:
         allow_patterns = {"**/*.py", "**/*.md", "**/README*"}  # Default if .claudeallow is missing
         logger.info(f"No .claudeallow file found, defaulting to: {allow_patterns}")
@@ -92,11 +127,22 @@ def analyze(
     # 4. Determine Initial Targets
     initial_targets_abs: Set[str] = set()
     for spec in target_specs:
-        abs_target_path = os.path.abspath(os.path.join(project_path, spec.path))
+        # Resolve the spec path relative to the config root (repo root) when relative,
+        # otherwise keep absolute as-is. This prevents duplicating segments like src/src.
+        base = result.config_root_path or project_path
+        abs_target_path = os.path.abspath(spec.path) if os.path.isabs(spec.path) else os.path.abspath(os.path.join(base, spec.path))
         if os.path.isdir(abs_target_path):
-            for path in scanned_files:
-                if path.startswith(abs_target_path):
-                    initial_targets_abs.add(path)
+            # If the target directory is the project_path itself, include everything scanned
+            try:
+                same_root = os.path.samefile(abs_target_path, project_path)
+            except Exception:
+                same_root = abs_target_path.rstrip(os.sep) == project_path.rstrip(os.sep)
+            if same_root:
+                initial_targets_abs.update(scanned_files)
+            else:
+                for path in scanned_files:
+                    if path.startswith(abs_target_path):
+                        initial_targets_abs.add(path)
         elif os.path.isfile(abs_target_path):
             if abs_target_path in all_file_infos:
                 initial_targets_abs.add(abs_target_path)
@@ -108,6 +154,18 @@ def analyze(
             result.errors.append("No specified targets were found after applying ignore/allow rules.")
         else:  # Default mode, analyze all
             initial_targets_abs.update(scanned_files)
+
+    # Map explicit line ranges from target specs to absolute file paths
+    selected_ranges_map: Dict[str, List[tuple]] = {}
+    for spec in target_specs:
+        if not spec.line_ranges:
+            continue
+        base = result.config_root_path or project_path
+        abs_target_path = os.path.abspath(spec.path) if os.path.isabs(spec.path) else os.path.abspath(os.path.join(base, spec.path))
+        if os.path.isfile(abs_target_path):
+            existing = selected_ranges_map.get(abs_target_path, [])
+            existing.extend(spec.line_ranges)
+            selected_ranges_map[abs_target_path] = existing
 
     # 5. Resolve Dependencies if necessary
     if max_depth != 0:
@@ -128,6 +186,11 @@ def analyze(
             continue
         try:
             analysis_data = processor.process_file(file_info, file_cache)
+            # Attach any requested line ranges for targeted files (ranges apply only to explicit targets)
+            if abs_path in selected_ranges_map:
+                # Normalize and merge overlapping ranges
+                ranges = _merge_line_ranges(selected_ranges_map[abs_path])
+                analysis_data.line_ranges = ranges
             result.required_files[abs_path] = analysis_data
         except Exception as e:
             error_msg = f"Failed to process file '{file_info.relative_path}': {e}"
@@ -136,3 +199,25 @@ def analyze(
 
     logger.info(f"Analysis complete. Processed {len(result.required_files)} files.")
     return result
+
+
+def _merge_line_ranges(ranges: List[tuple]) -> List[tuple]:
+    """Merge and normalize line ranges (1-based, inclusive)."""
+    # Normalize: ensure start <= end and both >= 1
+    norm = []
+    for start, end in ranges:
+        s = max(1, int(start))
+        e = max(1, int(end))
+        if e < s:
+            s, e = e, s
+        norm.append((s, e))
+    # Sort and merge
+    norm.sort()
+    merged: List[tuple] = []
+    for s, e in norm:
+        if not merged or s > merged[-1][1] + 1:
+            merged.append((s, e))
+        else:
+            last_s, last_e = merged[-1]
+            merged[-1] = (last_s, max(last_e, e))
+    return merged

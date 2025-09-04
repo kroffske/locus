@@ -12,10 +12,14 @@ logger = logging.getLogger(__name__)
 def generate_full_report(
     result: AnalysisResult,
     include_tree: bool,
+    include_flat: bool,
     include_code: bool,
     include_annotations_report: bool,
     include_readme: bool,
+    include_root_docs: bool,
     include_comments_in_tree: bool,
+    include_headers: bool = False,
+    ascii_tree: bool = False,
     full_code_re: Optional[Pattern] = None,
     annotation_re: Optional[Pattern] = None,
 ) -> str:
@@ -34,24 +38,90 @@ def generate_full_report(
     parts.append("```")
     parts.append("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n")
 
-    # Add README content first if available
+    # Add README and other root docs if requested
+    if include_readme and result.project_readme_content:
+        parts.extend(["## Project Documentation\n", result.project_readme_content, "\n---\n"])
+    if include_readme and include_root_docs:
+        root_for_docs = result.config_root_path or result.project_path
+        other_docs = _load_root_markdown_docs(root_for_docs)
+        for name, content in other_docs:
+            parts.extend([f"## {name}", content, "\n---\n"])
+
+    if result.errors:
+        parts.extend(["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"])
+
+    if include_tree and result.file_tree:
+        tree_md = tree.format_tree_markdown(
+            result.file_tree,
+            result.required_files,
+            include_comments_in_tree,
+            ascii_tree=ascii_tree,
+        )
+        parts.extend(["## Project Structure", f"```\n{tree_md}\n```\n", "\n---\n"])
+
+    if include_flat:
+        flat_md = tree.format_flat_list(result.required_files, include_comments_in_tree)
+        parts.extend(["## Flat Summary", f"```\n{flat_md}\n```\n", "\n---\n"])
+
+    if include_annotations_report:
+        parts.extend([generate_annotations_report_str(result), "\n---\n"])
+
+    if include_headers:
+        parts.extend(["## Top-of-file Comments", code.format_top_comments_collection(result), "\n---\n"])
+
+    if include_code and result.required_files:
+        parts.extend(["## File Contents", code.format_code_collection(result, full_code_re, annotation_re)])
+
+    return "\n".join(parts)
+
+
+def generate_headers_report(
+    result: AnalysisResult,
+    include_readme: bool,
+    include_comments_in_tree: bool,
+) -> str:
+    """Generates a report with project tree and only top-of-file comments/docstrings."""
+    parts = ["# Code Analysis Report (Headers)"]
+    parts.append(f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
     if include_readme and result.project_readme_content:
         parts.extend(["## Project Documentation\n", result.project_readme_content, "\n---\n"])
 
     if result.errors:
         parts.extend(["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"])
 
-    if include_tree and result.file_tree:
+    if result.file_tree:
         tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, include_comments_in_tree)
         parts.extend(["## Project Structure", f"```\n{tree_md}\n```\n", "\n---\n"])
 
-    if include_annotations_report:
-        parts.extend([generate_annotations_report_str(result), "\n---\n"])
-
-    if include_code and result.required_files:
-        parts.extend(["## File Contents", code.format_code_collection(result, full_code_re, annotation_re)])
+    parts.append("## Top-of-file Comments")
+    parts.append(code.format_top_comments_collection(result))
 
     return "\n".join(parts)
+
+
+def _load_root_markdown_docs(project_path: str):
+    """Returns a list of (display_name, content) for root-level .md files excluding README.*"""
+    docs = []
+    try:
+        for entry in sorted(os.listdir(project_path)):
+            lower = entry.lower()
+            if not lower.endswith(".md"):
+                continue
+            if lower.startswith("readme"):
+                continue
+            abs_path = os.path.join(project_path, entry)
+            if not os.path.isfile(abs_path):
+                continue
+            try:
+                with open(abs_path, encoding="utf-8", errors="ignore") as f:
+                    content = f.read().strip()
+                docs.append((entry, content))
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return docs
 
 
 def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: str, include_comments: bool):

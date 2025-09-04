@@ -41,6 +41,7 @@ class FileAnalysis:
     annotations: Optional[AnnotationInfo] = None
     comments: List[str] = field(default_factory=list)
     content: Optional[str] = None
+    line_ranges: List[Tuple[int, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -48,6 +49,7 @@ class AnalysisResult:
     """Represents the overall result of a code analysis run."""
 
     project_path: str
+    config_root_path: Optional[str] = None
     target_specs: List[TargetSpecifier] = field(default_factory=list)
     required_files: Dict[str, FileAnalysis] = field(default_factory=dict)  # Keyed by absolute path
     file_tree: Dict[str, Any] = field(default_factory=dict)

@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Optional, Pattern
 
-from ..models import AnalysisResult
+from ..models import AnalysisResult, FileAnalysis
 from .helpers import get_output_content
 
 logger = logging.getLogger(__name__)
@@ -56,3 +56,53 @@ def collect_files_to_directory(
 
     logger.info(f"Collected {collected_count} files into {output_dir}")
     return collected_count
+
+
+def _extract_top_comments_block(analysis: FileAnalysis) -> Optional[str]:
+    """Builds a string containing only the file's header comments and module docstring.
+    Returns None if neither exists.
+    """
+    # Only meaningful for Python files
+    if not analysis.file_info.filename.endswith(".py"):
+        return None
+
+    lines = []
+
+    # Pre-import hash comments at the very top (already stripped of '# ')
+    if analysis.comments:
+        for c in analysis.comments:
+            # Reconstruct as Python comments
+            if c:
+                lines.append(f"# {c}")
+            else:
+                lines.append("#")
+
+    # Module docstring (can be multiple lines)
+    doc = analysis.annotations.module_docstring if analysis.annotations else None
+    if doc:
+        if lines:
+            lines.append("")
+        lines.append('"""' + doc + '"""')
+
+    content = "\n".join(lines).strip()
+    return content or None
+
+
+def format_top_comments_collection(result: AnalysisResult) -> str:
+    """Formats only top-of-file comments (hash preamble + module docstrings) for Python files.
+    Skips files without such content.
+    """
+    output_parts = []
+    sorted_files = sorted(result.required_files.values(), key=lambda fa: fa.file_info.relative_path)
+
+    for analysis in sorted_files:
+        content = _extract_top_comments_block(analysis)
+        if not content:
+            continue
+
+        output_parts.append(f"### File: `{analysis.file_info.relative_path}`")
+        output_parts.append(f"```python\n{content}\n```\n")
+
+    if not output_parts:
+        return "_No top-of-file comments or module docstrings found in analyzed files._\n"
+    return "\n".join(output_parts)

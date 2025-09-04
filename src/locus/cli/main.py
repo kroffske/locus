@@ -64,10 +64,13 @@ def handle_analyze_command(args):
         for error in result.errors:
             logger.error(f"- {error}")
 
-    # Determine README inclusion
-    include_readme = True
-    if mode == "interactive" and not sys.stdout.isatty() and not args.with_readme:
-        include_readme = False
+    # Determine README/docs inclusion (default: off unless requested)
+    include_readme = False
+    include_root_docs = False
+    if getattr(args, "readme", False) or getattr(args, "with_readme", False):
+        include_readme = True
+    if getattr(args, "root_docs", False):
+        include_root_docs = True
     if args.skip_readme:
         include_readme = False
 
@@ -84,14 +87,41 @@ def handle_analyze_command(args):
                 console.print(result.project_readme_content)
                 print_divider()
             if result.file_tree:
-                print_header("Project Structure")
-                tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, args.comments)
-                # Use safe print method for tree to handle Unicode properly
-                try:
-                    console.print(tree_md, style="tree")
-                except UnicodeEncodeError:
-                    # Fallback to regular print if console has issues
-                    print(tree_md)
+                include_tree_comments = args.comments or getattr(args, "headers", False)
+                ascii_flag = getattr(args, "ascii_tree", False)
+
+                # Tree output (default)
+                if not getattr(args, "flat", False) or getattr(args, "tree", False):
+                    print_header("Project Structure")
+                    tree_md = tree.format_tree_markdown(
+                        result.file_tree,
+                        result.required_files,
+                        include_tree_comments,
+                        ascii_tree=ascii_flag,
+                    )
+                    try:
+                        console.print(tree_md, style="tree")
+                    except UnicodeEncodeError:
+                        # Re-render using ASCII connectors
+                        tree_md_ascii = tree.format_tree_markdown(
+                            result.file_tree,
+                            result.required_files,
+                            include_tree_comments,
+                            ascii_tree=True,
+                        )
+                        print(tree_md_ascii)
+
+                # Flat output when requested
+                if getattr(args, "flat", False):
+                    print_divider()
+                    print_header("Flat Summary")
+                    flat_md = tree.format_flat_list(result.required_files, include_tree_comments)
+                    print(flat_md)
+
+            # Optional annotations summary hint in interactive mode
+            if getattr(args, "annotations", False):
+                annotated = [fa for fa in result.required_files.values() if fa.annotations and (fa.annotations.module_docstring or fa.annotations.elements)]
+                print_info(f"Annotations extracted for {len(annotated)} files. Use -o to write a report.")
 
         elif mode == "report":
             # Report mode: write to file
@@ -100,14 +130,42 @@ def handle_analyze_command(args):
             # Determine what to include based on style
             include_code = args.style == "full"
             include_annotations = args.style == "annotations" or args.annotations
+            include_headers = (args.style == "headers") or getattr(args, "headers", False)
 
+            # Determine tree inclusion
+            include_tree = True
+            if getattr(args, "no_tree", False):
+                include_tree = False
+            elif getattr(args, "tree", False):
+                include_tree = True
+
+            include_flat = getattr(args, "flat", False)
+
+            # Code inclusion overrides and defaults:
+            if getattr(args, "no_code", False):
+                include_code = False
+            elif getattr(args, "code", False):
+                include_code = True
+            elif (getattr(args, "headers", False) or getattr(args, "annotations", False)) and args.style == "full":
+                # Default to no code when composing headers/annotations without explicit --code
+                include_code = False
+
+            # If headers requested, also enable tree comments to surface summaries
+            if getattr(args, "headers", False):
+                args.comments = True
+
+            ascii_flag = getattr(args, "ascii_tree", False)
             content = report.generate_full_report(
                 result,
-                include_tree=True,
+                include_tree=include_tree,
+                include_flat=include_flat,
                 include_code=include_code,
                 include_annotations_report=include_annotations,
                 include_readme=include_readme,
+                include_root_docs=include_root_docs,
                 include_comments_in_tree=args.comments,
+                include_headers=include_headers,
+                ascii_tree=ascii_flag,
                 full_code_re=full_code_re,
                 annotation_re=annotation_re,
             )
