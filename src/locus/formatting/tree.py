@@ -32,11 +32,9 @@ def format_tree_markdown(
         analysis = None
         if include_comments:
             analysis = details_map.get(node_rel_path) or details_map.get(os.path.join(node_rel_path, "__init__.py"))
-            # Keep single-line summary for directories; for files we will render multiline below
-            if isinstance(tree_data.get(key), dict):
-                summary = get_summary_from_analysis(analysis)
-                if summary:
-                    comment_suffix = f"  # {summary}"
+            summary = get_summary_from_analysis(analysis)
+            if summary:
+                comment_suffix = f"  # {summary}"
 
         if isinstance(node_value, dict):  # Directory
             output_lines.append(f"{prefix}{connector}{key}/{comment_suffix}")
@@ -52,24 +50,7 @@ def format_tree_markdown(
                 )
             )
         else:  # File
-            # For files, keep a one-line suffix for compatibility, then add remaining
-            # comment lines as indented multiline below the file entry.
-            if include_comments and analysis and not comment_suffix:
-                summary = get_summary_from_analysis(analysis)
-                if summary:
-                    comment_suffix = f"  # {summary}"
-
             output_lines.append(f"{prefix}{connector}{key}{comment_suffix}")
-
-            # If requested, render additional top-of-file comment lines below
-            if include_comments and analysis and getattr(analysis, "comments", None):
-                extra = analysis.comments[1:] if len(analysis.comments) > 1 else []
-                if extra:
-                    child_prefix = (
-                        prefix + ("  " if is_last else "| ") if ascii_tree else prefix + ("    " if is_last else "│   ")
-                    )
-                    for c in extra:
-                        output_lines.append(f"{child_prefix}# {c}" if c else f"{child_prefix}#")
 
     return "\n".join(output_lines)
 
