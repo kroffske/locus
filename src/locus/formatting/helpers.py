@@ -1,5 +1,6 @@
 import logging
-from typing import Optional, Pattern, Tuple
+import re
+from typing import List, Optional, Pattern, Tuple, Union
 
 from ..models import AnnotationInfo, FileAnalysis
 
@@ -15,23 +16,35 @@ def get_summary_from_analysis(analysis: Optional[FileAnalysis]) -> Optional[str]
         return _extract_first_sentence(analysis.annotations.module_docstring)
 
     if analysis.comments:
-        return _extract_first_sentence(analysis.comments[0])
+        # Join all top-of-file comment lines into a single line for tree display
+        joined = " ".join((c or "").strip() for c in analysis.comments)
+        return joined.strip() or None
 
     return None
 
 
 def _extract_first_sentence(text: str) -> str:
-    """Extracts the first sentence of a text block."""
+    """Extracts a clean, single-line first sentence/line from text.
+
+    - Prefer the first non-empty line to avoid embedded newlines in summaries.
+    - Then truncate at the first period for a concise sentence.
+    - Clamp to a reasonable length.
+    """
     if not text:
         return ""
-    sentence = text.split(".")[0].strip()
-    return sentence[:117] + "..." if len(sentence) > 120 else sentence
+    # Take first non-empty line to avoid multi-line spillover in tree
+    first_line = next((ln.strip() for ln in text.splitlines() if ln.strip()), "").strip()
+    if not first_line:
+        return ""
+    sentence = first_line.split(".")[0].strip()
+    # Do not clamp length; allow long lines to wrap naturally in output
+    return sentence
 
 
 def get_output_content(
     analysis: FileAnalysis,
-    full_code_re: Optional[Pattern],
-    annotation_re: Optional[Pattern],
+    full_code_re: Optional[Union[Pattern, str]],
+    annotation_re: Optional[Union[Pattern, str]],
 ) -> Tuple[str, str]:
     """Determines the content string and mode for a file.
     Returns (content, mode).
@@ -42,11 +55,27 @@ def get_output_content(
 
     if analysis.file_info.is_data_preview:
         mode = "data_preview"
-    elif full_code_re and full_code_re.search(rel_path):
-        mode = "full_code"
-    elif annotation_re and annotation_re.search(rel_path) and analysis.annotations:
-        content_to_use = format_annotations_as_py_stub(rel_path, analysis.annotations)
-        mode = "annotation_stub"
+    # Line range selection takes precedence over regex modes
+    elif analysis.line_ranges:
+        content_to_use = _slice_content_by_ranges(content_to_use, analysis.line_ranges)
+        mode = "line_range"
+    elif full_code_re:
+        if isinstance(full_code_re, str):
+            try:
+                full_code_re = re.compile(full_code_re)
+            except re.error:
+                full_code_re = None
+        if full_code_re and full_code_re.search(rel_path):
+            mode = "full_code"
+    elif annotation_re:
+        if isinstance(annotation_re, str):
+            try:
+                annotation_re = re.compile(annotation_re)
+            except re.error:
+                annotation_re = None
+        if annotation_re and annotation_re.search(rel_path) and analysis.annotations:
+            content_to_use = format_annotations_as_py_stub(rel_path, analysis.annotations)
+            mode = "annotation_stub"
 
     source_header = f"# source: {analysis.file_info.relative_path}"
     if not content_to_use.strip().lower().startswith(source_header.lower()):
@@ -96,3 +125,43 @@ def format_annotations_as_py_stub(relative_path: str, annotations: AnnotationInf
         lines.append("")
 
     return "\n".join(lines)
+
+
+def _slice_content_by_ranges(content_with_header: str, ranges: List[Tuple[int, int]]) -> str:
+    """Returns content with only the lines in the provided 1-based inclusive ranges.
+
+    Expects content_with_header to start with a '# source:' header line; preserves it.
+    """
+    lines = content_with_header.splitlines()
+    out: List[str] = []
+    # Preserve the first line if it's a source header
+    if lines and lines[0].lower().startswith("# source:"):
+        out.append(lines[0])
+        body = lines[1:]
+    else:
+        body = lines
+
+    total = len(body)
+    # Build a boolean mask for selected lines
+    select = [False] * total
+    for s, e in ranges:
+        s0 = max(1, s)
+        e0 = max(1, e)
+        if e0 < s0:
+            s0, e0 = e0, s0
+        # Convert to 0-based indices within body
+        start_idx = max(0, s0 - 1)
+        end_idx = min(total - 1, e0 - 1)
+        for i in range(start_idx, end_idx + 1):
+            select[i] = True
+
+    # Extract selected lines
+    sliced = [body[i] for i in range(total) if select[i]]
+    if not sliced:
+        # If nothing selected, return header plus empty line
+        if out:
+            return "\n".join(out + [""])
+        return ""
+
+    out.extend(sliced)
+    return "\n".join(out)
