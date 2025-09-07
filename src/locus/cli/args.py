@@ -137,6 +137,20 @@ def parse_arguments() -> argparse.Namespace:
     content_style.add_argument("--with-readme", action="store_true", help=argparse.SUPPRESS)
     content_style.add_argument("--add-annotations", action="store_true", help="Add OUT.md annotations file to directory output")
 
+    # Similarity Group
+    sim_group = analyze_parser.add_argument_group("Similarity Search")
+    sim_group.add_argument("--similarity", action="store_true", help="Enable similarity/duplicate function detection")
+    sim_group.add_argument(
+        "--sim-strategy",
+        choices=["exact"],
+        default="exact",
+        help="Similarity strategy to use (MVP: exact)",
+    )
+    sim_group.add_argument("--sim-threshold", type=float, default=1.0, help="Similarity threshold (strategy-specific)")
+    sim_group.add_argument("--sim-max-candidates", type=int, default=0, help="Max candidates per unit (unused in MVP)")
+    sim_group.add_argument("--sim-output", help="Optional path to write raw similarity JSON")
+    sim_group.add_argument("--report-duplicates-only", action="store_true", help="Show only duplicate clusters in report")
+
     # Deprecated option (kept for backward compatibility)
     content_style.add_argument("--generate-summary", metavar="FILENAME", nargs="?", const="claude.md", default=None, help=argparse.SUPPRESS)
     # Logging Group (shared)

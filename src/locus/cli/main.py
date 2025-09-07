@@ -3,6 +3,8 @@ import os
 import sys
 
 from ..core.orchestrator import analyze
+from ..similarity import run as run_similarity
+from ..similarity.search import SimilarityConfig
 from ..formatting import code, report, tree
 from ..formatting.colors import (
     console,
@@ -58,6 +60,19 @@ def handle_analyze_command(args):
         include_patterns=args.include,
         exclude_patterns=args.exclude,
     )
+
+    # Optional similarity pass
+    if getattr(args, "similarity", False):
+        cfg = SimilarityConfig(
+            strategy=getattr(args, "sim_strategy", "exact"),
+            threshold=getattr(args, "sim_threshold", 1.0),
+            max_candidates=getattr(args, "sim_max_candidates", 0),
+        )
+        try:
+            sim_result = run_similarity(result, cfg)
+            result.similarity = sim_result
+        except Exception as e:
+            logger.error(f"Similarity analysis failed: {e}")
 
     if result.errors:
         logger.error("Analysis completed with errors:")
@@ -122,6 +137,25 @@ def handle_analyze_command(args):
             if getattr(args, "annotations", False):
                 annotated = [fa for fa in result.required_files.values() if fa.annotations and (fa.annotations.module_docstring or fa.annotations.elements)]
                 print_info(f"Annotations extracted for {len(annotated)} files. Use -o to write a report.")
+
+            # Similarity output when requested
+            if getattr(args, "similarity", False):
+                sim = getattr(result, "similarity", None)
+                print_divider()
+                print_header("Similar or Duplicate Functions")
+                if not sim or not getattr(sim, "clusters", None):
+                    strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact")) if sim else getattr(args, "sim_strategy", "exact")
+                    print_info(f"No duplicates found (strategy: {strat}).")
+                else:
+                    strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact"))
+                    print_info(f"Strategy: {strat} · Units: {len(sim.units)} · Clusters: {len(sim.clusters)}")
+                    # Show concise listing of clusters and their members
+                    for cluster in sim.clusters:
+                        print(f"- Cluster {cluster.id} (size {len(cluster.member_ids)}):")
+                        ids = set(cluster.member_ids)
+                        members = [u for u in sim.units if u.id in ids]
+                        for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
+                            print(f"    · {u.rel_path}:{u.span[0]}-{u.span[1]}  {u.qualname}")
 
         elif mode == "report":
             # Report mode: write to file
@@ -191,6 +225,19 @@ def handle_analyze_command(args):
                 with open(readme_path, "w", encoding="utf-8") as f:
                     f.write(result.project_readme_content)
                 logger.info(f"Copied README to {readme_path}")
+
+        # Raw similarity JSON output (any mode)
+        if getattr(args, "similarity", False) and getattr(args, "sim_output", None):
+            import json
+            path = args.sim_output
+            try:
+                payload = _serialize_similarity(result)
+                os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(payload, f, ensure_ascii=False, indent=2)
+                logger.info(f"Wrote similarity JSON to {path}")
+            except Exception as e:
+                logger.error(f"Failed writing similarity JSON: {e}")
 
     except OSError as e:
         logger.error(f"Fatal error during output generation: {e}", exc_info=True)
@@ -262,6 +309,45 @@ def main():
         return handle_update_command(args)
     logger.error(f"Unknown command: {args.command}")
     return 1
+
+
+def _serialize_similarity(result):
+    sim = getattr(result, "similarity", None)
+    if not sim:
+        return {}
+    # Convert dataclasses to JSON-friendly structures
+    return {
+        "meta": getattr(sim, "meta", {}),
+        "units": [
+            {
+                "id": u.id,
+                "file": u.file,
+                "rel_path": u.rel_path,
+                "qualname": u.qualname,
+                "span": list(u.span),
+            }
+            for u in sim.units
+        ],
+        "clusters": [
+            {
+                "id": c.id,
+                "member_ids": list(c.member_ids),
+                "strategy": c.strategy,
+                "score_min": c.score_min,
+                "score_max": c.score_max,
+            }
+            for c in sim.clusters
+        ],
+        "matches": [
+            {
+                "a_id": m.a_id,
+                "b_id": m.b_id,
+                "score": m.score,
+                "strategy": m.strategy,
+            }
+            for m in sim.matches
+        ],
+    }
 
 
 if __name__ == "__main__":

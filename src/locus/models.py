@@ -55,3 +55,5 @@ class AnalysisResult:
     file_tree: Dict[str, Any] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
     project_readme_content: Optional[str] = None
+    # Optional attachment for additional analyses (e.g., similarity search)
+    similarity: Optional[Any] = None
