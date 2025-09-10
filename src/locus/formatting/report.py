@@ -66,6 +66,22 @@ def generate_full_report(
     if include_annotations_report:
         parts.extend([generate_annotations_report_str(result), "\n---\n"])
 
+    # Similarity section (if computed)
+    sim = getattr(result, "similarity", None)
+    if sim and getattr(sim, "clusters", None):
+        parts.append("## Similar or Duplicate Functions\n")
+        parts.append("The following clusters contain functions with identical normalized text (exact strategy).\n")
+        for cluster in sim.clusters:
+            # Show cluster header
+            members = [u for u in sim.units if u.id in set(cluster.member_ids)]
+            if not members:
+                continue
+            parts.append(f"### Cluster {cluster.id} · size {len(members)} · strategy `{cluster.strategy}`")
+            for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
+                parts.append(f"- `{u.rel_path}:{u.span[0]}-{u.span[1]}` · `{u.qualname}`")
+            parts.append("")
+        parts.append("\n---\n")
+
     if include_headers:
         parts.extend(["## Top-of-file Comments", code.format_top_comments_collection(result), "\n---\n"])
 

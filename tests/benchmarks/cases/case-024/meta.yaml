@@ -1,0 +1,21 @@
+id: case-024
+description: Type-3 near-miss (if-branch order swapped)
+kind: function
+type: T3
+tags: [branching, reorder]
+expected:
+  strategy: any
+  threshold: 0.85
+members:
+  - label: a
+    file: a.py
+    qualname: clamp
+  - label: b
+    file: b.py
+    qualname: clamp
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Equivalent condition ordering
+

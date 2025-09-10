@@ -1,0 +1,21 @@
+id: case-006
+description: Type-1 exact duplicate of reverse function
+kind: function
+type: T1
+tags: [string]
+expected:
+  strategy: exact
+  threshold: 1.0
+members:
+  - label: a
+    file: a.py
+    qualname: reverse_text
+  - label: b
+    file: b.py
+    qualname: reverse_text
+pairs:
+  - left: a
+    right: b
+    relation: duplicate
+    notes: Identical code
+

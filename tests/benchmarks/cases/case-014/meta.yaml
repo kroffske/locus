@@ -1,0 +1,21 @@
+id: case-014
+description: Type-2 rename of class, fields, and method computing squared length
+kind: class
+type: T2
+tags: [class, math, rename]
+expected:
+  strategy: any
+  threshold: 0.95
+members:
+  - label: a
+    file: a.py
+    qualname: Point
+  - label: b
+    file: b.py
+    qualname: Pt
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Class, attrs, and method renamed
+

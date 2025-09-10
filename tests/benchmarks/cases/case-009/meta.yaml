@@ -1,0 +1,21 @@
+id: case-009
+description: Type-2 rename of function and parameters performing addition
+kind: function
+type: T2
+tags: [arithmetic, rename]
+expected:
+  strategy: any
+  threshold: 0.95
+members:
+  - label: a
+    file: a.py
+    qualname: add
+  - label: b
+    file: b.py
+    qualname: sum_values
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Renamed function and params
+

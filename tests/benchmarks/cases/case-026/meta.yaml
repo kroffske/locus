@@ -1,0 +1,21 @@
+id: case-026
+description: Type-3 near-miss (if/else vs get default idiom)
+kind: function
+type: T3
+tags: [dict, small-change]
+expected:
+  strategy: any
+  threshold: 0.85
+members:
+  - label: a
+    file: a.py
+    qualname: char_freq
+  - label: b
+    file: b.py
+    qualname: char_freq
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Different idioms, same effect
+

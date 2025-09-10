@@ -1,0 +1,21 @@
+id: case-005
+description: Type-1 exact duplicate of max finder
+kind: function
+type: T1
+tags: [loop, compare]
+expected:
+  strategy: exact
+  threshold: 1.0
+members:
+  - label: a
+    file: a.py
+    qualname: max_in_list
+  - label: b
+    file: b.py
+    qualname: max_in_list
+pairs:
+  - left: a
+    right: b
+    relation: duplicate
+    notes: Identical except comment
+

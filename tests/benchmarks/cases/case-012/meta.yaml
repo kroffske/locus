@@ -1,0 +1,21 @@
+id: case-012
+description: Type-2 rename across nested loops for list flattening
+kind: function
+type: T2
+tags: [loop, list, rename]
+expected:
+  strategy: any
+  threshold: 0.95
+members:
+  - label: a
+    file: a.py
+    qualname: flatten
+  - label: b
+    file: b.py
+    qualname: flatten_lists
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Variables and function renamed
+

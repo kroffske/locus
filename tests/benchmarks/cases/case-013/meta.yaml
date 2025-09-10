@@ -1,0 +1,21 @@
+id: case-013
+description: Type-2 rename of Euclidean GCD implementation
+kind: function
+type: T2
+tags: [math, loop, rename]
+expected:
+  strategy: any
+  threshold: 0.95
+members:
+  - label: a
+    file: a.py
+    qualname: gcd
+  - label: b
+    file: b.py
+    qualname: greatest_common_divisor
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Function and vars renamed
+
