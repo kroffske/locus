@@ -76,7 +76,6 @@ def generate_full_report(
             members = [u for u in sim.units if u.id in set(cluster.member_ids)]
             if not members:
                 continue
-            exemplar = members[0]
             parts.append(f"### Cluster {cluster.id} · size {len(members)} · strategy `{cluster.strategy}`")
             for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
                 parts.append(f"- `{u.rel_path}:{u.span[0]}-{u.span[1]}` · `{u.qualname}`")

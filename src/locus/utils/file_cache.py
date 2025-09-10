@@ -56,7 +56,7 @@ class FileCache:
                         self.content_cache[file_path] = None
                         return None
 
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:  # noqa: UP015
                 content = f.read()
             self.content_cache[file_path] = content
             return content

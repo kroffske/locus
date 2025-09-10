@@ -1,0 +1,21 @@
+id: case-003
+description: Type-1 exact duplicate of iterative factorial
+kind: function
+type: T1
+tags: [loop]
+expected:
+  strategy: exact
+  threshold: 1.0
+members:
+  - label: a
+    file: a.py
+    qualname: fact
+  - label: b
+    file: b.py
+    qualname: fact
+pairs:
+  - left: a
+    right: b
+    relation: duplicate
+    notes: Comment only
+

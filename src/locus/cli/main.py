@@ -3,8 +3,6 @@ import os
 import sys
 
 from ..core.orchestrator import analyze
-from ..similarity import run as run_similarity
-from ..similarity.search import SimilarityConfig
 from ..formatting import code, report, tree
 from ..formatting.colors import (
     console,
@@ -13,6 +11,8 @@ from ..formatting.colors import (
     print_info,
     setup_rich_logging,
 )
+from ..similarity import run as run_similarity
+from ..similarity.search import SimilarityConfig
 from ..updater import parser as updater_parser
 from ..updater import writer as updater_writer
 from ..utils.helpers import compile_regex
@@ -141,21 +141,9 @@ def handle_analyze_command(args):
             # Similarity output when requested
             if getattr(args, "similarity", False):
                 sim = getattr(result, "similarity", None)
+                strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact")) if sim else getattr(args, "sim_strategy", "exact")
                 print_divider()
-                print_header("Similar or Duplicate Functions")
-                if not sim or not getattr(sim, "clusters", None):
-                    strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact")) if sim else getattr(args, "sim_strategy", "exact")
-                    print_info(f"No duplicates found (strategy: {strat}).")
-                else:
-                    strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact"))
-                    print_info(f"Strategy: {strat} · Units: {len(sim.units)} · Clusters: {len(sim.clusters)}")
-                    # Show concise listing of clusters and their members
-                    for cluster in sim.clusters:
-                        print(f"- Cluster {cluster.id} (size {len(cluster.member_ids)}):")
-                        ids = set(cluster.member_ids)
-                        members = [u for u in sim.units if u.id in ids]
-                        for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
-                            print(f"    · {u.rel_path}:{u.span[0]}-{u.span[1]}  {u.qualname}")
+                _print_similarity_summary(sim, strat, show_members=True, member_bullet="·")
 
         elif mode == "report":
             # Report mode: write to file
@@ -245,6 +233,56 @@ def handle_analyze_command(args):
     return 0
 
 
+def handle_sim_command(args):
+    """Similarity-only subcommand: analyze targets and print similarity summary."""
+    # Resolve project root from targets
+    target_specs = [parse_target_specifier(t) for t in args.targets]
+    project_path = os.path.abspath(os.path.commonpath([spec.path for spec in target_specs]))
+    if not os.path.isdir(project_path):
+        project_path = os.path.dirname(project_path)
+    logger.info(f"Starting analysis in project root: {project_path}")
+
+    result = analyze(
+        project_path=project_path,
+        target_specs=target_specs,
+        max_depth=args.depth,
+        include_patterns=args.include,
+        exclude_patterns=args.exclude,
+    )
+
+    # Run similarity
+    cfg = SimilarityConfig(
+        strategy=getattr(args, "strategy", "ast"),
+        threshold=getattr(args, "threshold", 1.0),
+        include_init=getattr(args, "include_init", False),
+    )
+    try:
+        sim_result = run_similarity(result, cfg)
+        result.similarity = sim_result
+    except Exception as e:
+        logger.error(f"Similarity analysis failed: {e}")
+        return 1
+
+    # Print concise similarity summary using shared helper
+    _print_similarity_summary(result.similarity, cfg.strategy, show_members=getattr(args, "print_members", True), member_bullet="·")
+
+    # Optional JSON output
+    out = getattr(args, "json_out", None)
+    if out:
+        import json
+        try:
+            payload = _serialize_similarity(result)
+            os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+            with open(out, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+            logger.info(f"Wrote similarity JSON to {out}")
+        except Exception as e:
+            logger.error(f"Failed writing similarity JSON: {e}")
+            return 1
+
+    return 0
+
+
 def handle_update_command(args):
     """Orchestrates the 'update' command workflow."""
     if sys.stdin.isatty():
@@ -305,6 +343,8 @@ def main():
 
     if args.command == "analyze":
         return handle_analyze_command(args)
+    if args.command == "sim":
+        return handle_sim_command(args)
     if args.command == "update":
         return handle_update_command(args)
     logger.error(f"Unknown command: {args.command}")
@@ -348,6 +388,27 @@ def _serialize_similarity(result):
             for m in sim.matches
         ],
     }
+
+
+def _print_similarity_summary(sim, strategy: str, show_members: bool = True, member_bullet: str = "·") -> None:
+    """Print a concise similarity summary consistently across commands.
+
+    - Prints header and either a no-results message or a summary with optional members.
+    - ``member_bullet`` controls the bullet used for member lines (e.g., "·" or "-").
+    """
+    print_header("Similar or Duplicate Functions")
+    if not sim or not getattr(sim, "clusters", None):
+        print_info(f"No duplicates found (strategy: {strategy}).")
+        return
+    print_info(f"Strategy: {strategy} · Units: {len(sim.units)} · Clusters: {len(sim.clusters)}")
+    if not show_members:
+        return
+    for cluster in sim.clusters:
+        print(f"- Cluster {cluster.id} (size {len(cluster.member_ids)}):")
+        ids = set(cluster.member_ids)
+        members = [u for u in sim.units if u.id in ids]
+        for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
+            print(f"    {member_bullet} {u.rel_path}:{u.span[0]}-{u.span[1]}  {u.qualname}")
 
 
 if __name__ == "__main__":

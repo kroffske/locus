@@ -11,8 +11,10 @@ code/README toggles for report output composition.
 import argparse
 import logging
 import sys
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as pkg_version
 from typing import List, Tuple
-from importlib.metadata import PackageNotFoundError, version as pkg_version
+
 from ..models import TargetSpecifier
 
 logger = logging.getLogger(__name__)
@@ -142,14 +144,17 @@ def parse_arguments() -> argparse.Namespace:
     sim_group.add_argument("--similarity", action="store_true", help="Enable similarity/duplicate function detection")
     sim_group.add_argument(
         "--sim-strategy",
-        choices=["exact"],
+        choices=["exact", "ast"],
         default="exact",
-        help="Similarity strategy to use (MVP: exact)",
+        help="Similarity strategy: 'exact' (whitespace-normalized) or 'ast' (identifier/literal masking)",
     )
     sim_group.add_argument("--sim-threshold", type=float, default=1.0, help="Similarity threshold (strategy-specific)")
     sim_group.add_argument("--sim-max-candidates", type=int, default=0, help="Max candidates per unit (unused in MVP)")
     sim_group.add_argument("--sim-output", help="Optional path to write raw similarity JSON")
     sim_group.add_argument("--report-duplicates-only", action="store_true", help="Show only duplicate clusters in report")
+    sim_group.add_argument("--sim-include-init", action="store_true", help="Include __init__ methods in similarity (default: excluded)")
+    sim_group.add_argument("--no-sim-print-members", dest="sim_print_members", action="store_false", help="Hide member listing in interactive output")
+    sim_group.set_defaults(sim_print_members=True)
 
     # Deprecated option (kept for backward compatibility)
     content_style.add_argument("--generate-summary", metavar="FILENAME", nargs="?", const="claude.md", default=None, help=argparse.SUPPRESS)
@@ -160,6 +165,36 @@ def parse_arguments() -> argparse.Namespace:
         logging_group.add_argument("--logs", action="store_true", help="Write logs to file")
         logging_group.add_argument("--log-file", default="pr-analyze_log.txt", help=argparse.SUPPRESS)
         logging_group.add_argument("--no-color", action="store_true", help="Disable color")
+
+    # --- SIM Sub-command ---
+    sim_parser = subparsers.add_parser(
+        "sim",
+        help="Run similarity/duplicate detection only.",
+        formatter_class=argparse.HelpFormatter,
+        add_help=False,
+    )
+    sim_parser.add_argument("-h", "--help", action="store_true", help="Show help for sim")
+    sim_parser.add_argument(
+        "targets",
+        nargs="*",
+        default=["."],
+        help="Targets: dir, file, or file:lines (e.g., src/ or a.py:10-50)",
+    )
+    sim_parser.add_argument("--include", nargs="+", metavar="PATTERN", help="Glob patterns to include")
+    sim_parser.add_argument("--exclude", nargs="+", metavar="PATTERN", help="Glob patterns to exclude")
+    sim_parser.add_argument("-d", "--depth", type=int, default=-1, help="Import depth: 0=off, 1=direct, 2=nested, -1=unlimited")
+    sim_parser.add_argument("-s", "--strategy", choices=["exact", "ast"], default="ast", help="Similarity strategy")
+    sim_parser.add_argument("-t", "--threshold", type=float, default=1.0, help="Similarity threshold (strategy-specific)")
+    sim_parser.add_argument("-j", "--json-out", help="Optional path to write raw similarity JSON")
+    sim_parser.add_argument("--include-init", action="store_true", help="Include __init__ methods (default: excluded)")
+    sim_parser.add_argument("--no-print-members", dest="print_members", action="store_false", help="Hide cluster member listing")
+    sim_parser.set_defaults(print_members=True)
+    # Shared logging for sim
+    sim_logging = sim_parser.add_argument_group("Logging")
+    sim_logging.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
+    sim_logging.add_argument("--logs", action="store_true", help="Write logs to file")
+    sim_logging.add_argument("--log-file", default="pr-analyze_log.txt", help=argparse.SUPPRESS)
+    sim_logging.add_argument("--no-color", action="store_true", help="Disable color")
 
     # --- UPDATE Sub-command ---
     update_parser = subparsers.add_parser(
@@ -190,6 +225,7 @@ def parse_arguments() -> argparse.Namespace:
             ("", ""),
             ("subheader", "Commands"),
             ("", "  analyze   Analyze code and generate a report (default)"),
+            ("", "  sim       Run similarity/duplicate detection only"),
             ("", "  update    Update local files from Markdown via stdin"),
             ("", ""),
             ("subheader", "Quick Start"),
@@ -214,7 +250,7 @@ def parse_arguments() -> argparse.Namespace:
 
     # Pre-parse to allow calling without explicit subcommand (default to 'analyze')
     argv = list(original_argv)
-    if argv and argv[0] not in {"analyze", "update"}:
+    if argv and argv[0] not in {"analyze", "update", "sim"}:
         argv = ["analyze"] + argv
     args = parser.parse_args(argv)
 
@@ -289,6 +325,40 @@ def parse_arguments() -> argparse.Namespace:
             print()
             _emit(lines_advanced)
 
+        sys.exit(0)
+
+    # Render custom, concise help for sim
+    if getattr(args, "command", None) == "sim" and getattr(args, "help", False):
+        try:
+            from ..formatting.colors import console
+        except Exception:
+            console = None
+
+        lines = [
+            ("header", "Locus Similarity"),
+            ("divider", "-" * 60),
+            ("", "Usage: locus sim [targets ...] [options]"),
+            ("", ""),
+            ("subheader", "Quick Start"),
+            ("", "  locus sim -s ast -j sim.json"),
+            ("", "  locus sim src/ --include 'src/**/*.py' --exclude 'tests/**'"),
+            ("", ""),
+            ("subheader", "Options"),
+            ("", "  -s, --strategy {exact,ast}   Strategy to use"),
+            ("", "  -t, --threshold FLOAT        Threshold (strategy-specific)"),
+            ("", "  -j, --json-out PATH          Write raw similarity JSON"),
+            ("", "  -d, --depth N                Import depth"),
+            ("", "      --include/--exclude      File selection globs"),
+        ]
+        if console:
+            for style, text in lines:
+                if style in {"header", "subheader", "divider"}:
+                    console.print(f"[{style}]{text}[/{style}]")
+                else:
+                    console.print(text)
+        else:
+            for _, text in lines:
+                print(text)
         sys.exit(0)
 
     return args

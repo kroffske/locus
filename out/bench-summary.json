@@ -1,0 +1,836 @@
+{
+  "exact": {
+    "cases": [
+      {
+        "case": "case-001",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-002",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Rect or b=b.py:Rect"
+        ]
+      },
+      {
+        "case": "case-003",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-004",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-005",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-006",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-007",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Counter or b=b.py:Counter"
+        ]
+      },
+      {
+        "case": "case-008",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-009",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-010",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-011",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Greeter or b=b.py:Welcomer"
+        ]
+      },
+      {
+        "case": "case-012",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-013",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-014",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Point or b=b.py:Pt"
+        ]
+      },
+      {
+        "case": "case-015",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-016",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-017",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-018",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Stack or b=b.py:Lifo"
+        ]
+      },
+      {
+        "case": "case-019",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-020",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-021",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-022",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-023",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Stats or b=b.py:Stats"
+        ]
+      },
+      {
+        "case": "case-024",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-025",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-026",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-027",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-028",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:SimpleCache or b=b.py:SimpleCache"
+        ]
+      },
+      {
+        "case": "case-029",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-030",
+        "status": "FAIL",
+        "message": "strategy=exact · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "exact",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      }
+    ],
+    "metrics": {
+      "positives_expected": 30,
+      "positives_detected": 0,
+      "negatives_expected": 0,
+      "negatives_fp": 0,
+      "missing_pairs": 7,
+      "cases_pass": 0,
+      "cases_fail": 30
+    }
+  },
+  "ast": {
+    "cases": [
+      {
+        "case": "case-001",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-002",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Rect or b=b.py:Rect"
+        ]
+      },
+      {
+        "case": "case-003",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-004",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-005",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-006",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-007",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Counter or b=b.py:Counter"
+        ]
+      },
+      {
+        "case": "case-008",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-009",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-010",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-011",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Greeter or b=b.py:Welcomer"
+        ]
+      },
+      {
+        "case": "case-012",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-013",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-014",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Point or b=b.py:Pt"
+        ]
+      },
+      {
+        "case": "case-015",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-016",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-017",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-018",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Stack or b=b.py:Lifo"
+        ]
+      },
+      {
+        "case": "case-019",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-020",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-021",
+        "status": "PASS",
+        "message": "strategy=ast · pos 1/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 1,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": []
+      },
+      {
+        "case": "case-022",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-023",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:Stats or b=b.py:Stats"
+        ]
+      },
+      {
+        "case": "case-024",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-025",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-026",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-027",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-028",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 1",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 1,
+        "failures": [
+          "Missing units: a=a.py:SimpleCache or b=b.py:SimpleCache"
+        ]
+      },
+      {
+        "case": "case-029",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      },
+      {
+        "case": "case-030",
+        "status": "FAIL",
+        "message": "strategy=ast · pos 0/1 · neg_fp 0/0 · missing 0",
+        "strategy": "ast",
+        "positives_expected": 1,
+        "positives_detected": 0,
+        "negatives_expected": 0,
+        "negatives_fp": 0,
+        "missing_pairs": 0,
+        "failures": [
+          "Expected same cluster for a-b"
+        ]
+      }
+    ],
+    "metrics": {
+      "positives_expected": 30,
+      "positives_detected": 16,
+      "negatives_expected": 0,
+      "negatives_fp": 0,
+      "missing_pairs": 7,
+      "cases_pass": 16,
+      "cases_fail": 14
+    }
+  }
+}

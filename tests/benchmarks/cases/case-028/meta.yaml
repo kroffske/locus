@@ -1,0 +1,21 @@
+id: case-028
+description: Type-3 near-miss (membership check vs get)
+kind: class
+type: T3
+tags: [class, dict, small-change]
+expected:
+  strategy: any
+  threshold: 0.85
+members:
+  - label: a
+    file: a.py
+    qualname: SimpleCache
+  - label: b
+    file: b.py
+    qualname: SimpleCache
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Slightly different idiom for lookup
+

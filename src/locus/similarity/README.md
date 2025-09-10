@@ -24,12 +24,13 @@ Notes:
 - Token/literal changes do not match in the MVP.
 
 ## CLI Usage
-- Interactive quick view:
-  - `locus analyze -p --similarity`
-- Write a report and raw JSON payload:
+- Interactive quick view within analyze:
+  - `locus analyze -p --similarity --sim-strategy ast`
+- Similarity-only command:
+  - `locus sim -s ast -j sim.json`
+- Write a report and raw JSON payload from analyze:
   - `locus analyze --similarity -o report.md --sim-output sim.json`
-- Strategy flag (MVP supports only `exact`):
-  - `locus analyze --similarity --sim-strategy exact`
+  - Strategies: `exact` (whitespace-normalized) or `ast` (identifier/literal masking)
 
 What you’ll see in interactive mode:
 - “Similar or Duplicate Functions” section.
@@ -76,3 +77,46 @@ print(sim.clusters)
 - SimHash and/or MinHash+LSH for scalable near-duplicate detection.
 - Extended normalization (strip comments/docstrings, consistent quoting).
 - Thresholded reporting with previews and scores.
+
+## Benchmarks
+- Location: `tests/benchmarks/` contains canonical cases and schema docs. See `tests/benchmarks/README.md` for layout, naming, and how to add new cases.
+
+### Quick Run (CLI)
+- Exact duplicates (Type‑1) on a single case:
+  - `locus sim tests/benchmarks/cases/case-001 -s exact`
+- AST‑canonical strategy (identifier/literal masking):
+  - `locus sim tests/benchmarks/cases/case-002 -s ast`
+- Write raw JSON for inspection:
+  - `locus sim tests/benchmarks/cases/case-001 -s exact -j out/sim.json`
+
+Tips:
+- Add `--no-print-members` for a terse summary.
+- Include `--include-init` to consider `__init__` methods.
+
+### Running With Pytest
+- Install dev deps: `pip install -e .[dev]`
+- Run the test suite (includes similarity tests):
+  - `pytest -q`  (or `PYTHONPATH=src pytest -q` if running from source tree)
+
+At present, `tests/benchmarks/` is a data suite used for manual and future automated checks. You can point `locus sim` at any `tests/benchmarks/cases/case-XYZ/` directory to validate strategy behavior interactively or export JSON for downstream analysis.
+
+### Full Benchmark Sweep With Summary
+- Prereq: install dev deps (includes PyYAML): `pip install -e .[dev]`
+- Run all cases and get PASS/FAIL/SKIP summary:
+  - `python tests/benchmarks/run_benchmarks.py`
+  - From a source tree without install: `PYTHONPATH=src python tests/benchmarks/run_benchmarks.py`
+
+What it does:
+- T1 cases run with `exact` strategy; T2 with `ast`.
+- T3 (near-miss) cases are currently marked SKIP (unsupported).
+- Compares case-defined pairs against detected clusters and prints a concise summary.
+
+Advanced options:
+- Force a specific strategy for all cases (useful because `exact` currently keeps comments/docstrings):
+  - `python tests/benchmarks/run_benchmarks.py --strategy ast`
+- Attempt T3 cases using the T2 strategy mapping (experimental):
+  - `python tests/benchmarks/run_benchmarks.py --include-t3`
+- Choose default mapping when `expected.strategy: any`:
+  - `--t1-strategy exact|ast` (default: exact), `--t2-strategy exact|ast` (default: ast)
+- Emit JSON summary for CI dashboards:
+  - `python tests/benchmarks/run_benchmarks.py --strategy ast --json-out out/bench-summary.json`

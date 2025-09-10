@@ -1,0 +1,21 @@
+id: case-022
+description: Type-3 near-miss (statement reordering without logic change)
+kind: function
+type: T3
+tags: [string, reorder]
+expected:
+  strategy: any
+  threshold: 0.85
+members:
+  - label: a
+    file: a.py
+    qualname: normalize_text
+  - label: b
+    file: b.py
+    qualname: normalize_text
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Strip vs replace order changed
+

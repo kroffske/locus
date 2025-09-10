@@ -16,6 +16,7 @@
 - Lint: `ruff check src/ tests/` (auto-fix: `ruff check --fix src/ tests/`).
 - Format (ruff): `ruff format src/ tests/`.
 - Format (black): `black src/ tests/` (installed via `.[dev]`).
+ - Quick repo map: `locus analyze -p` (adds structure tree to output).
 
 ### Dev environment
 - Install dev tools: `pip install -e .[dev]`
@@ -58,6 +59,7 @@
 - Safe updates: when using `locus update`, prefer `--dry-run` first and `--backup` for destructive edits.
 - Filtering: edit `.locusallow`/`.locusignore` (or `.claudeallow`/`.claudeignore`) to control analysis scope.
 - Large repos: limit dependency resolution with `--depth` and use `--include/--exclude` patterns to keep reports focused.
+ - Project defaults: place config in `.locus/` (e.g., `.locus/config.toml`) to predefine common flags and patterns so you don’t repeat long CLI args. Explicit CLI flags always override file defaults.
 
 ## Architecture Overview
 - CLI orchestrates analysis (`orchestrator.analyze`) and output modes (interactive/report/collection).

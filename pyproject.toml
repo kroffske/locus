@@ -34,6 +34,7 @@ data = [
 dev = [
     "ruff>=0.4.0",
     "black>=24.1.0",
+    "pyyaml>=6.0",
 ]
 
 [project.urls]

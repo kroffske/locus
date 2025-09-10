@@ -1,0 +1,21 @@
+id: case-010
+description: Type-2 rename of variables and function for mean calculation
+kind: function
+type: T2
+tags: [loop, arithmetic, rename]
+expected:
+  strategy: any
+  threshold: 0.95
+members:
+  - label: a
+    file: a.py
+    qualname: average
+  - label: b
+    file: b.py
+    qualname: mean
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Different names, same structure
+

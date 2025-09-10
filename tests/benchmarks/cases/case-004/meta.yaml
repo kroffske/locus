@@ -1,0 +1,21 @@
+id: case-004
+description: Type-1 exact duplicate of simple string normalize
+kind: function
+type: T1
+tags: [string]
+expected:
+  strategy: exact
+  threshold: 1.0
+members:
+  - label: a
+    file: a.py
+    qualname: normalize
+  - label: b
+    file: b.py
+    qualname: normalize
+pairs:
+  - left: a
+    right: b
+    relation: duplicate
+    notes: Identical code
+
