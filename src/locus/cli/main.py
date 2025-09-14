@@ -11,6 +11,7 @@ from ..formatting.colors import (
     print_info,
     setup_rich_logging,
 )
+from ..init import init_project
 from ..similarity import run as run_similarity
 from ..similarity.search import SimilarityConfig
 from ..updater import parser as updater_parser
@@ -217,6 +218,7 @@ def handle_analyze_command(args):
         # Raw similarity JSON output (any mode)
         if getattr(args, "similarity", False) and getattr(args, "sim_output", None):
             import json
+
             path = args.sim_output
             try:
                 payload = _serialize_similarity(result)
@@ -270,6 +272,7 @@ def handle_sim_command(args):
     out = getattr(args, "json_out", None)
     if out:
         import json
+
         try:
             payload = _serialize_similarity(result)
             os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
@@ -313,6 +316,45 @@ def handle_update_command(args):
     return 0
 
 
+def handle_init_command(args):
+    """Orchestrates the 'init' command workflow."""
+    from pathlib import Path
+
+    from ..init.creator import FileConflictError, InitError
+
+    try:
+        target_dir = Path.cwd()
+        force = getattr(args, "force", False)
+        interactive = not getattr(args, "non_interactive", False)
+        project_name = getattr(args, "project_name", None)
+
+        created_files = init_project(
+            target_dir=target_dir,
+            force=force,
+            interactive=interactive,
+            project_name=project_name,
+        )
+
+        if created_files:
+            print_info(f"Successfully created {len(created_files)} template files:")
+            for filename in sorted(created_files):
+                print_info(f"  ✓ {filename}")
+        else:
+            print_info("No files were created.")
+
+    except FileConflictError:
+        logger.info("Initialization cancelled due to file conflicts.")
+        return 1
+    except InitError as e:
+        logger.error(f"Initialization failed: {e}")
+        return 1
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during initialization: {e}", exc_info=True)
+        return 1
+
+    return 0
+
+
 def main():
     """Main entry point for the CLI."""
     args = parse_arguments()
@@ -347,6 +389,8 @@ def main():
         return handle_sim_command(args)
     if args.command == "update":
         return handle_update_command(args)
+    if args.command == "init":
+        return handle_init_command(args)
     logger.error(f"Unknown command: {args.command}")
     return 1
 
