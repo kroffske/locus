@@ -8,4 +8,3 @@ class SimpleCache:
             return val
         self._data[key] = default
         return default
-

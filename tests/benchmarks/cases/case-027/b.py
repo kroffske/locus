@@ -5,4 +5,3 @@ def sum_if_even(xs):
             continue
         s += x
     return s
-

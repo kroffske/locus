@@ -4,4 +4,3 @@ def clamp(x, lo, hi):
     if x > hi:
         return hi
     return x
-

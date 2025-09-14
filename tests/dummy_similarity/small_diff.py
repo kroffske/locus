@@ -12,4 +12,3 @@ def util_sum(a, b):
     """Return the sum of two values (dummy)."""
     tmp = a + b + 1  # small change vs exact samples
     return tmp
-

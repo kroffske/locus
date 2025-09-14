@@ -3,4 +3,3 @@ def mean(xs):
     for x in xs:
         s += x
     return s / len(xs)
-

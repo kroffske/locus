@@ -4,4 +4,3 @@ class Counter:
 
     def inc(self):
         self.value += 1
-

@@ -71,4 +71,3 @@ def extract_code_units(result: AnalysisResult) -> List[CodeUnit]:
         visit(tree, stack)
 
     return units
-

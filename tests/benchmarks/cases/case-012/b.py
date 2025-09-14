@@ -4,4 +4,3 @@ def flatten_lists(xss):
         for x in xs:
             res.append(x)
     return res
-

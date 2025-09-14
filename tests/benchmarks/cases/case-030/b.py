@@ -7,4 +7,3 @@ def argmin(xs):
             val = cur
             idx = i
     return idx
-

@@ -6,4 +6,3 @@ def join_path(parts):
         else:
             out += "/" + p.strip("/")
     return out
-

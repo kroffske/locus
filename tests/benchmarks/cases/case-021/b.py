@@ -4,4 +4,3 @@ def sum_of_squares(xs):
         s += v * v
     # tiny change: alias var name only
     return s
-
