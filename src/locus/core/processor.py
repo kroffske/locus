@@ -128,14 +128,7 @@ def _extract_annotations(tree: ast.AST) -> AnnotationInfo:
                     except Exception:
                         pass
                 elif isinstance(item, ast.Assign):
-                    # Regular assignment (e.g., x = 5)
-                    try:
-                        for target in item.targets:
-                            if isinstance(target, ast.Name):
-                                attr_value = ast.unparse(item.value)
-                                attributes.append(f"{target.id} = {attr_value}")
-                    except Exception:
-                        pass
+                    _append_assign_attributes(item, attributes)
                 elif isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     try:
                         m_sig = ast.unparse(item).split("\n", 1)[0].strip(":")
@@ -145,3 +138,17 @@ def _extract_annotations(tree: ast.AST) -> AnnotationInfo:
 
             annotations.elements[node.name] = {"type": "class", "docstring": ast.get_docstring(node), "decorators": decorators, "attributes": attributes, "methods": methods}
     return annotations
+
+
+def _append_assign_attributes(item: ast.Assign, attributes: List[str]) -> None:
+    """Append formatted class attribute assignments from an ast.Assign node.
+
+    Only simple name targets are recorded to keep output concise.
+    """
+    try:
+        value_repr = ast.unparse(item.value)
+    except Exception:
+        return
+    for target in item.targets:
+        if isinstance(target, ast.Name):
+            attributes.append(f"{target.id} = {value_repr}")

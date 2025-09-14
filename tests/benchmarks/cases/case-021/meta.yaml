@@ -1,0 +1,21 @@
+id: case-021
+description: Type-3 near-miss (accumulator rename and tiny structure change)
+kind: function
+type: T3
+tags: [loop, arithmetic, small-change]
+expected:
+  strategy: any
+  threshold: 0.85
+members:
+  - label: a
+    file: a.py
+    qualname: sum_of_squares
+  - label: b
+    file: b.py
+    qualname: sum_of_squares
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Accumulator variable name differs; same semantics
+

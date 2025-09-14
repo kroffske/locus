@@ -166,3 +166,5 @@ docker-compose.override.yml
 .claude/
 out.md
 logs
+tasks/
+sessions.md

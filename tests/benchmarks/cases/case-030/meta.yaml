@@ -1,0 +1,21 @@
+id: case-030
+description: Type-3 near-miss (introduce temporary variable names)
+kind: function
+type: T3
+tags: [loop, compare, small-change]
+expected:
+  strategy: any
+  threshold: 0.85
+members:
+  - label: a
+    file: a.py
+    qualname: argmin
+  - label: b
+    file: b.py
+    qualname: argmin
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Same algorithm, different temps
+

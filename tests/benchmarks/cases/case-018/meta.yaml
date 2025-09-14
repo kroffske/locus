@@ -1,0 +1,21 @@
+id: case-018
+description: Type-2 rename of stack-like class and methods
+kind: class
+type: T2
+tags: [class, list, rename]
+expected:
+  strategy: any
+  threshold: 0.95
+members:
+  - label: a
+    file: a.py
+    qualname: Stack
+  - label: b
+    file: b.py
+    qualname: Lifo
+pairs:
+  - left: a
+    right: b
+    relation: similar
+    notes: Class, fields, methods renamed
+
