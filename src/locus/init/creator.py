@@ -1,3 +1,4 @@
+# Complete code content here - do not skip any lines
 """Core file creation logic for project initialization.
 
 Handles template file creation with conflict detection and user interaction.
@@ -8,6 +9,8 @@ import logging
 import os
 from pathlib import Path
 from typing import Dict, List, Set
+
+from locus.formatting.colors import confirm, print_warning  # Import from colors
 
 from .templates import get_default_templates, get_template_content
 
@@ -53,11 +56,11 @@ def prompt_user_for_overwrite(existing_files: Set[str]) -> bool:
         return True
 
     file_list = ", ".join(sorted(existing_files))
-    logger.warning(f"The following template files already exist: {file_list}")
+    print_warning(f"The following template files already exist: {file_list}")  # Use print_warning
 
     try:
-        response = input("Continue and overwrite existing files? (y/N): ").strip().lower()
-        return response in ("y", "yes")
+        # Use colors.confirm for consistent UX
+        return confirm("Continue and overwrite existing files?")
     except (EOFError, KeyboardInterrupt):
         return False
 
@@ -75,9 +78,13 @@ def prompt_user_for_each_file(existing_files: Set[str]) -> Set[str]:
 
     for filename in sorted(existing_files):
         try:
-            response = input(f"Overwrite existing {filename}? (y/N): ").strip().lower()
-            if response in ("y", "yes"):
+            # Use colors.confirm for consistent UX
+            if confirm(f"Overwrite existing {filename}?"):
                 files_to_overwrite.add(filename)
+            else:
+                # If user declines to overwrite a file, stop asking for other files in this mode
+                logger.info("Initialization cancelled by user for remaining files.")
+                break
         except (EOFError, KeyboardInterrupt):
             logger.info("Initialization cancelled by user.")
             break

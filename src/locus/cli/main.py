@@ -13,6 +13,7 @@ from ..formatting.colors import (
 )
 from ..init import init_project
 from ..similarity import run as run_similarity
+from ..similarity.formatting import print_similarity_summary, serialize_similarity
 from ..similarity.search import SimilarityConfig
 from ..updater import parser as updater_parser
 from ..updater import writer as updater_writer
@@ -144,7 +145,7 @@ def handle_analyze_command(args):
                 sim = getattr(result, "similarity", None)
                 strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact")) if sim else getattr(args, "sim_strategy", "exact")
                 print_divider()
-                _print_similarity_summary(sim, strat, show_members=True, member_bullet="·")
+                print_similarity_summary(sim, strat, show_members=True, member_bullet="·")
 
         elif mode == "report":
             # Report mode: write to file
@@ -221,7 +222,7 @@ def handle_analyze_command(args):
 
             path = args.sim_output
             try:
-                payload = _serialize_similarity(result)
+                payload = serialize_similarity(result)
                 os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -266,7 +267,7 @@ def handle_sim_command(args):
         return 1
 
     # Print concise similarity summary using shared helper
-    _print_similarity_summary(result.similarity, cfg.strategy, show_members=getattr(args, "print_members", True), member_bullet="·")
+    print_similarity_summary(result.similarity, cfg.strategy, show_members=getattr(args, "print_members", True), member_bullet="·")
 
     # Optional JSON output
     out = getattr(args, "json_out", None)
@@ -274,7 +275,7 @@ def handle_sim_command(args):
         import json
 
         try:
-            payload = _serialize_similarity(result)
+            payload = serialize_similarity(result)
             os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
             with open(out, "w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -393,66 +394,6 @@ def main():
         return handle_init_command(args)
     logger.error(f"Unknown command: {args.command}")
     return 1
-
-
-def _serialize_similarity(result):
-    sim = getattr(result, "similarity", None)
-    if not sim:
-        return {}
-    # Convert dataclasses to JSON-friendly structures
-    return {
-        "meta": getattr(sim, "meta", {}),
-        "units": [
-            {
-                "id": u.id,
-                "file": u.file,
-                "rel_path": u.rel_path,
-                "qualname": u.qualname,
-                "span": list(u.span),
-            }
-            for u in sim.units
-        ],
-        "clusters": [
-            {
-                "id": c.id,
-                "member_ids": list(c.member_ids),
-                "strategy": c.strategy,
-                "score_min": c.score_min,
-                "score_max": c.score_max,
-            }
-            for c in sim.clusters
-        ],
-        "matches": [
-            {
-                "a_id": m.a_id,
-                "b_id": m.b_id,
-                "score": m.score,
-                "strategy": m.strategy,
-            }
-            for m in sim.matches
-        ],
-    }
-
-
-def _print_similarity_summary(sim, strategy: str, show_members: bool = True, member_bullet: str = "·") -> None:
-    """Print a concise similarity summary consistently across commands.
-
-    - Prints header and either a no-results message or a summary with optional members.
-    - ``member_bullet`` controls the bullet used for member lines (e.g., "·" or "-").
-    """
-    print_header("Similar or Duplicate Functions")
-    if not sim or not getattr(sim, "clusters", None):
-        print_info(f"No duplicates found (strategy: {strategy}).")
-        return
-    print_info(f"Strategy: {strategy} · Units: {len(sim.units)} · Clusters: {len(sim.clusters)}")
-    if not show_members:
-        return
-    for cluster in sim.clusters:
-        print(f"- Cluster {cluster.id} (size {len(cluster.member_ids)}):")
-        ids = set(cluster.member_ids)
-        members = [u for u in sim.units if u.id in ids]
-        for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
-            print(f"    {member_bullet} {u.rel_path}:{u.span[0]}-{u.span[1]}  {u.qualname}")
 
 
 if __name__ == "__main__":

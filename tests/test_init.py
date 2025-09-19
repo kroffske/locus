@@ -55,6 +55,20 @@ class TestTemplates:
         assert "pip install -e ." in content
         assert "python -m my_project --help" in content
 
+    def test_get_template_content_architecture(self):
+        """Test ARCHITECTURE template generation."""
+        content = get_template_content("architecture", {"project_name": "test_project"})
+        assert "# System Architecture Guide — test_project" in content
+        assert "System Design Principles" in content
+        assert "Why We Separate Concerns" in content
+
+    def test_get_template_content_mcp(self):
+        """Test MCP configuration template generation."""
+        content = get_template_content("mcp")
+        assert '"mcpServers"' in content
+        assert '"sequential-thinking"' in content
+        assert '"type": "stdio"' in content
+
     def test_get_template_content_unknown(self):
         """Test error handling for unknown template."""
         with pytest.raises(ValueError, match="Unknown template: unknown"):
@@ -68,6 +82,8 @@ class TestTemplates:
             "TESTS.md": "tests",
             "SESSION.md": "session",
             "TODO.md": "todo",
+            "ARCHITECTURE.md": "architecture",
+            ".mcp.json": "mcp",
         }
         assert templates == expected
 
@@ -98,23 +114,23 @@ class TestCreatorLogic:
         existing = check_existing_files(tmp_path, template_files)
         assert existing == {"CLAUDE.md", "TESTS.md"}
 
-    @patch("builtins.input", return_value="y")
-    def test_prompt_user_for_overwrite_yes(self, mock_input):
+    @patch("locus.init.creator.confirm", return_value=True)
+    def test_prompt_user_for_overwrite_yes(self, mock_confirm):
         """Test user prompt for overwrite - yes response."""
         existing = {"CLAUDE.md", "TESTS.md"}
         result = prompt_user_for_overwrite(existing)
         assert result is True
-        mock_input.assert_called_once()
+        mock_confirm.assert_called_once()
 
-    @patch("builtins.input", return_value="n")
-    def test_prompt_user_for_overwrite_no(self, mock_input):
+    @patch("locus.init.creator.confirm", return_value=False)
+    def test_prompt_user_for_overwrite_no(self, mock_confirm):
         """Test user prompt for overwrite - no response."""
         existing = {"CLAUDE.md"}
         result = prompt_user_for_overwrite(existing)
         assert result is False
 
-    @patch("builtins.input", return_value="")
-    def test_prompt_user_for_overwrite_default_no(self, mock_input):
+    @patch("locus.init.creator.confirm", return_value=False)
+    def test_prompt_user_for_overwrite_default_no(self, mock_confirm):
         """Test user prompt for overwrite - default (empty) response."""
         existing = {"CLAUDE.md"}
         result = prompt_user_for_overwrite(existing)
@@ -125,20 +141,21 @@ class TestCreatorLogic:
         result = prompt_user_for_overwrite(set())
         assert result is True
 
-    @patch("builtins.input", side_effect=["y", "n", "yes"])
-    def test_prompt_user_for_each_file(self, mock_input):
+    @patch("locus.init.creator.confirm", side_effect=[True, False])
+    def test_prompt_user_for_each_file(self, mock_confirm):
         """Test prompting for each file individually."""
         existing = {"CLAUDE.md", "TESTS.md", "SESSION.md"}
         result = prompt_user_for_each_file(existing)
 
         # Files are processed in sorted order: CLAUDE.md, SESSION.md, TESTS.md
-        # Responses: y, n, yes -> CLAUDE.md (y=yes), SESSION.md (n=no), TESTS.md (yes=yes)
-        expected = {"CLAUDE.md", "TESTS.md"}
+        # Responses: True, False -> CLAUDE.md (True=yes), SESSION.md (False=no), then breaks
+        # Due to new break behavior, only CLAUDE.md is processed
+        expected = {"CLAUDE.md"}
         assert result == expected
-        assert mock_input.call_count == 3
+        assert mock_confirm.call_count == 2  # Only called twice before break
 
-    @patch("builtins.input", side_effect=KeyboardInterrupt())
-    def test_prompt_user_for_each_file_interrupt(self, mock_input):
+    @patch("locus.init.creator.confirm", side_effect=KeyboardInterrupt())
+    def test_prompt_user_for_each_file_interrupt(self, mock_confirm):
         """Test handling keyboard interrupt during individual prompts."""
         existing = {"CLAUDE.md", "TESTS.md"}
         result = prompt_user_for_each_file(existing)
@@ -156,7 +173,7 @@ class TestCreatorLogic:
         assert (tmp_path / "CLAUDE.md").exists()
         assert (tmp_path / "TESTS.md").exists()
 
-        claude_content = (tmp_path / "CLAUDE.md").read_text()
+        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
         assert "test_project" in claude_content
 
     def test_create_template_files_subset(self, tmp_path: Path):
@@ -201,21 +218,21 @@ class TestInitProject:
         """Test successful initialization in empty directory."""
         created = init_project(target_dir=tmp_path, project_name="test_project")
 
-        expected_files = {"CLAUDE.md", "TESTS.md", "SESSION.md", "TODO.md"}
+        expected_files = {"CLAUDE.md", "TESTS.md", "SESSION.md", "TODO.md", "ARCHITECTURE.md", ".mcp.json"}
         assert set(created) == expected_files
 
         for filename in expected_files:
             assert (tmp_path / filename).exists()
 
         # Check content substitution
-        claude_content = (tmp_path / "CLAUDE.md").read_text()
+        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
         assert "test_project" in claude_content
 
     def test_init_project_default_project_name(self, tmp_path: Path):
         """Test that project name defaults to directory name."""
         created = init_project(target_dir=tmp_path)
 
-        claude_content = (tmp_path / "CLAUDE.md").read_text()
+        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
         assert tmp_path.name in claude_content
 
     def test_init_project_force_overwrite(self, tmp_path: Path):
@@ -226,7 +243,7 @@ class TestInitProject:
         created = init_project(target_dir=tmp_path, force=True, project_name="test_project")
 
         assert "CLAUDE.md" in created
-        claude_content = (tmp_path / "CLAUDE.md").read_text()
+        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
         assert "old content" not in claude_content
         assert "test_project" in claude_content
 
@@ -259,9 +276,9 @@ class TestInitProject:
 
         created = init_project(target_dir=tmp_path, interactive=True)
 
-        # Should create CLAUDE.md (overwrite), SESSION.md, TODO.md (new)
+        # Should create CLAUDE.md (overwrite), SESSION.md, TODO.md, ARCHITECTURE.md, .mcp.json (new)
         # Should NOT recreate TESTS.md (user said no)
-        expected_created = {"CLAUDE.md", "SESSION.md", "TODO.md"}
+        expected_created = {"CLAUDE.md", "SESSION.md", "TODO.md", "ARCHITECTURE.md", ".mcp.json"}
         assert set(created) == expected_created
 
         mock_prompt.assert_called_once_with({"CLAUDE.md", "TESTS.md"})
@@ -287,5 +304,5 @@ class TestInitProject:
 
         created = init_project(target_dir=None, project_name="test_project")
 
-        assert len(created) == 4  # Should create all default files
+        assert len(created) == 6  # Should create all default files
         assert (tmp_path / "CLAUDE.md").exists()
