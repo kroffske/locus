@@ -231,9 +231,9 @@ The format is:
 
 Locus uses configuration files to control which files are included or excluded from analysis. These files are automatically created with sensible defaults on first run if they don't exist.
 
-### `.locusallow` (or `.claudeallow` for compatibility)
+### `.locus/allow`
 
-Specifies glob patterns for files to include in analysis. One pattern per line. If neither `.locusallow` nor `.claudeallow` exists, a default `.locusallow` file will be created with common source code patterns.
+Specifies glob patterns for files to include in analysis. One pattern per line. Located in the `.locus/` directory in your project root. If no configuration exists, default files will be created automatically.
 
 Example:
 ```
@@ -244,9 +244,9 @@ Example:
 **/README*
 ```
 
-### `.locusignore` (or `.claudeignore` for compatibility)  
+### `.locus/ignore`
 
-Specifies patterns for files to exclude from analysis. One pattern per line. If neither `.locusignore` nor `.claudeignore` exists, a default `.locusignore` file will be created excluding common build artifacts and dependencies.
+Specifies patterns for files to exclude from analysis. One pattern per line. Located in the `.locus/` directory in your project root. If no configuration exists, default files will be created automatically excluding common build artifacts and dependencies.
 
 Example:
 ```
@@ -257,7 +257,7 @@ Example:
 **/.git/**
 ```
 
-**Note**: The tool checks for `.locusallow`/`.locusignore` first, then falls back to `.claudeallow`/`.claudeignore` for backward compatibility. You can rename your existing `.claude*` files to `.locus*` if you prefer the new naming.
+**Note**: The tool checks for `.locus/allow` and `.locus/ignore` first, then falls back to legacy `.locusallow`/`.locusignore` files in the project root for backward compatibility. Existing configuration will be automatically migrated to the new `.locus/` directory structure.
 
 ## Advanced Features
 

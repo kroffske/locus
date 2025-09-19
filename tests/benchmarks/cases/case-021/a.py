@@ -3,4 +3,3 @@ def sum_of_squares(xs):
     for v in xs:
         total += v * v
     return total
-

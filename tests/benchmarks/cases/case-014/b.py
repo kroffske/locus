@@ -5,4 +5,3 @@ class Pt:
 
     def length2(self):
         return self.a * self.a + self.b * self.b
-

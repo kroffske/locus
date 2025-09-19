@@ -11,4 +11,3 @@ def util_sum(a, b):
     """Return the sum of two values (dummy)."""
     total = a + b  # renamed internal variable vs 'tmp'
     return total
-

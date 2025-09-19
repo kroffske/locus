@@ -5,4 +5,3 @@ def parse_ints(lines):
         if s:
             out.append(int(s))
     return out
-

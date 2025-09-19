@@ -6,4 +6,3 @@ def char_freq(s: str):
         else:
             freq[ch] = 1
     return freq
-

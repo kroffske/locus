@@ -5,4 +5,3 @@ class Point:
 
     def dist2(self):
         return self.x * self.x + self.y * self.y
-

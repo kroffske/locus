@@ -127,54 +127,84 @@ DEFAULT_LOCUSIGNORE = """# File patterns to exclude from analysis
 **/.temp/**
 
 # Config files to exclude
+.locus/**
 .locusignore
 .locusallow
-.claudeignore
-.claudeallow
 """
 
 
 def create_default_config_if_needed(project_path: str) -> None:
-    """Creates default .locusallow and .locusignore files if they don't exist."""
-    locus_allow = Path(project_path) / ".locusallow"
-    locus_ignore = Path(project_path) / ".locusignore"
+    """Creates default .locus directory and config files if they don't exist."""
+    project_root = Path(project_path)
+    locus_dir = project_root / ".locus"
+    locus_allow = locus_dir / "allow"
+    locus_ignore = locus_dir / "ignore"
 
-    if not locus_allow.exists() and not (Path(project_path) / ".claudeallow").exists():
+    # Check if any config files exist (new or legacy)
+    legacy_allow = project_root / ".locusallow"
+    legacy_ignore = project_root / ".locusignore"
+
+    # Only create if no config exists at all
+    if not any([locus_allow.exists(), locus_ignore.exists(), legacy_allow.exists(), legacy_ignore.exists()]):
         try:
+            # Create .locus directory
+            locus_dir.mkdir(exist_ok=True)
+
+            # Create config files
             locus_allow.write_text(DEFAULT_LOCUSALLOW, encoding="utf-8")
-            logger.info(f"Created default .locusallow file at {locus_allow}")
-        except OSError as e:
-            logger.warning(f"Could not create .locusallow file: {e}")
-
-    if not locus_ignore.exists() and not (Path(project_path) / ".claudeignore").exists():
-        try:
             locus_ignore.write_text(DEFAULT_LOCUSIGNORE, encoding="utf-8")
-            logger.info(f"Created default .locusignore file at {locus_ignore}")
+
+            logger.info(f"Created .locus directory with default config files at {locus_dir}")
         except OSError as e:
-            logger.warning(f"Could not create .locusignore file: {e}")
+            logger.warning(f"Could not create .locus config directory: {e}")
+
+    # Migrate legacy files if they exist and new directory doesn't
+    elif not locus_dir.exists() and (legacy_allow.exists() or legacy_ignore.exists()):
+        try:
+            locus_dir.mkdir(exist_ok=True)
+
+            if legacy_allow.exists():
+                content = legacy_allow.read_text(encoding="utf-8")
+                locus_allow.write_text(content, encoding="utf-8")
+                legacy_allow.unlink()  # Remove old file
+                logger.info(f"Migrated .locusallow to {locus_allow}")
+
+            if legacy_ignore.exists():
+                content = legacy_ignore.read_text(encoding="utf-8")
+                locus_ignore.write_text(content, encoding="utf-8")
+                legacy_ignore.unlink()  # Remove old file
+                logger.info(f"Migrated .locusignore to {locus_ignore}")
+
+        except OSError as e:
+            logger.warning(f"Could not migrate legacy config files: {e}")
 
 
 def load_project_config(project_path: str) -> Tuple[Set[str], Set[str]]:
     """Loads ignore and allow patterns from config files.
 
     Priority order:
-    1. .locusallow / .locusignore (new names)
-    2. .claudeallow / .claudeignore (legacy names for compatibility)
+    1. .locus/allow and .locus/ignore (new directory structure)
+    2. .locusallow / .locusignore (legacy root files for backwards compatibility)
 
-    If neither exists, creates default .locus* files.
+    If no config exists, creates default .locus directory and files.
     """
     # Try to create default config files if needed
     create_default_config_if_needed(project_path)
 
-    # Check for new names first, then fall back to legacy names
-    locus_ignore = os.path.join(project_path, ".locusignore")
-    locus_allow = os.path.join(project_path, ".locusallow")
-    claude_ignore = os.path.join(project_path, ".claudeignore")
-    claude_allow = os.path.join(project_path, ".claudeallow")
+    project_root = Path(project_path)
 
-    # Use locus files if they exist, otherwise fall back to claude files
-    ignore_file = locus_ignore if os.path.exists(locus_ignore) else claude_ignore
-    allow_file = locus_allow if os.path.exists(locus_allow) else claude_allow
+    # Check for new directory structure first
+    locus_dir = project_root / ".locus"
+    new_ignore = locus_dir / "ignore"
+    new_allow = locus_dir / "allow"
+
+    # Check for legacy root files
+    legacy_ignore = project_root / ".locusignore"
+    legacy_allow = project_root / ".locusallow"
+
+    # Use new structure if available, otherwise fall back to legacy
+    ignore_file = str(new_ignore) if new_ignore.exists() else str(legacy_ignore)
+    allow_file = str(new_allow) if new_allow.exists() else str(legacy_allow)
 
     ignore_patterns = _read_pattern_file(ignore_file)
     allow_patterns = _read_pattern_file(allow_file)

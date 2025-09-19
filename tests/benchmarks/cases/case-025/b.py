@@ -7,4 +7,3 @@ def unique_order(xs):
         out.append(x)
         seen.add(x)
     return out
-

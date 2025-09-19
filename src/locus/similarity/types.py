@@ -36,4 +36,3 @@ class SimilarityResult:
     clusters: List[Cluster]
     matches: List[Match]
     meta: Dict[str, Any] = field(default_factory=dict)
-

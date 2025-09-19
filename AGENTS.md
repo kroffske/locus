@@ -1,67 +1,92 @@
-# Repository Guidelines
+# AI Agent Guidelines — locus
 
-## Project Structure & Module Organization
-- Source: `src/locus/` (CLI, core, formatting, updater, utils, models).
-  - CLI: `src/locus/cli/` (`args.py`, `main.py`).
-  - Core pipeline: `src/locus/core/` (`scanner.py`, `resolver.py`, `processor.py`, `orchestrator.py`).
-  - Formatting: `src/locus/formatting/` (tree, report, code, colors, helpers).
-  - Updater: `src/locus/updater/` (Markdown parser/writer).
-- Tests: `tests/` (`test_*.py`, `conftest.py`).
-- Packaging: `pyproject.toml` (entry point `locus`).
+**Goal:** Fast, reliable changes with tight quality gates.
 
-## Build, Test, and Development Commands
-- Install (editable): `pip install -e .` or with data extras: `pip install -e .[data]`.
-- Run CLI: `locus analyze` or `python -m locus analyze src/ -o report.md`.
-- Tests: `pytest` (quiet: `pytest -q`).
-- Lint: `ruff check src/ tests/` (auto-fix: `ruff check --fix src/ tests/`).
-- Format (ruff): `ruff format src/ tests/`.
-- Format (black): `black src/ tests/` (installed via `.[dev]`).
- - Quick repo map: `locus analyze -p` (adds structure tree to output).
+## Golden Rules
+1.  **Single Responsibility**: One module for one job (scanner, resolver, processor, formatting).
+2.  **Separate Concerns**: I/O and error handling at boundaries; core logic must be pure and testable.
+3.  **Small Interfaces**: Pass explicit arguments; no hidden globals or entire config objects.
+4.  **Stable Contracts**: Use Pydantic models for data with typed, documented fields.
+5.  **Fail Fast**: Raise narrow, specific exceptions. Never use `except Exception:` or return silent defaults.
 
-### Dev environment
-- Install dev tools: `pip install -e .[dev]`
-- Run both formatters:
-  - `black src/ tests/`
-  - `ruff check --fix src/ tests/ && ruff format src/ tests/`
+## Required Workflow
+**analyze → plan → code → lint → format → test → if OK → log session & commit | else → fix**
 
-### Windows consoles
-- If your terminal can’t render Unicode tree characters, pass `--ascii-tree` to `locus analyze`.
-- UTF-8 is enabled programmatically; no manual `PYTHONIOENCODING` setup needed.
+### Commands
+```bash
+# 1. Lint and auto-fix
+ruff check --fix src/ tests/
 
-### Typical workflows
-- Quick analyze to file: `locus analyze -p -t -a --no-code -o out.md`
-- Interactive skim: `locus analyze -p --ascii-tree`
-- Scope by globs: `locus analyze -p --include "src/**/*.py" --exclude "tests/**"`
+# 2. Format code (the project standard)
+ruff format src/ tests/
 
-## Coding Style & Naming Conventions
-- Python 3.8+; 4-space indentation; prefer type hints where helpful.
-- Line length: 180 (see `[tool.ruff]`). Use double quotes by default.
-- Imports: sorted by Ruff’s isort rules; remove unused.
-- Naming: `snake_case` for functions/vars/modules, `PascalCase` for classes, `UPPER_CASE` for constants.
-- Keep functions cohesive and small; avoid side effects in formatting utilities.
+# 3. Run tests
+pytest -q
+```
 
-## Testing Guidelines
-- Framework: `pytest`. Place tests in `tests/` and name files `test_*.py`.
-- Cover: core behaviors in scanner, resolver, orchestrator, formatting, and CLI parsing.
-- Use fixtures in `conftest.py`; prefer pure functions and deterministic outputs.
-- Run `pytest` locally before opening a PR.
+### Definition of Done
+*   Lint clean and correctly formatted.
+*   All tests passing (including new, minimal tests for changes).
+*   A `SESSION.md` entry is appended.
+*   Commit message follows Conventional Commits format (`feat:`, `fix:`, etc.).
 
-## Commit & Pull Request Guidelines
-- Commits: concise, imperative subject line; include scope when useful (e.g., "core: improve resolver depth handling").
-- Keep related changes together; avoid noisy reformat-only commits unless necessary.
-- PRs must include:
-  - Summary of changes and rationale.
-  - Before/after examples for CLI output when applicable.
-  - Linked issues (e.g., `Closes #123`).
-  - Verification: output of `pytest` and `ruff check`.
+## Core Examples
 
-## Security & Configuration Tips
-- Safe updates: when using `locus update`, prefer `--dry-run` first and `--backup` for destructive edits.
-- Filtering: edit `.locusallow`/`.locusignore` (or `.claudeallow`/`.claudeignore`) to control analysis scope.
-- Large repos: limit dependency resolution with `--depth` and use `--include/--exclude` patterns to keep reports focused.
- - Project defaults: place config in `.locus/` (e.g., `.locus/config.toml`) to predefine common flags and patterns so you don’t repeat long CLI args. Explicit CLI flags always override file defaults.
+### Boundary vs Logic (keep logic pure)
 
-## Architecture Overview
-- CLI orchestrates analysis (`orchestrator.analyze`) and output modes (interactive/report/collection).
-- Updater reads Markdown blocks and writes files with optional backups.
-- Formatting layer renders tree/report/code consistently for TTY and files.
+```python
+from pathlib import Path
+
+class ProcessingError(Exception): ...
+
+def load_text(path: Path) -> str:
+    """Boundary function: Handles I/O and converts low-level errors."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (FileNotFoundError, UnicodeDecodeError) as e:
+        raise ProcessingError(f"Error loading {path}: {e}") from e
+```
+
+```python
+import ast
+
+def analyze_content(text: str) -> dict:
+    """Pure logic function: Assumes valid input, raises specific errors."""
+    tree = ast.parse(text)  # May raise SyntaxError, which is expected to be handled upstream.
+    funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    classes = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
+    return {"functions": funcs, "classes": classes}
+```
+
+### Small Interface (pass only what's needed)
+
+```python
+def format_tree(files: list, show_comments: bool = False) -> str:
+    """This function only needs a list of files and a boolean, not the whole config."""
+    lines = []
+    for f in files:
+        line = f"├─ {f.rel_path}"
+        if show_comments and getattr(f, 'comment', None):
+            line += f"  # {f.comment}"
+        lines.append(line)
+
+    if lines:
+        lines[-1] = lines[-1].replace("├", "└", 1)
+    return "\n".join(lines)
+```
+
+## Project Context
+
+### Architecture Flow
+Add your project's main workflow here.
+
+### Module Mapping
+*   **Core Logic**: `src/locus/core/`
+*   **Output Generation**: `src/locus/formatting/`
+*   **Data Models**: `src/locus/models.py`
+
+## Contribution & Logging
+
+*   Tests are mandatory → see **[TESTS.md](TESTS.md)**
+*   Track live progress in **[TODO.md](TODO.md)** (gitignored)
+*   After completion, append notes to **[SESSION.md](SESSION.md)**

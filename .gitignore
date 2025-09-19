@@ -167,4 +167,6 @@ docker-compose.override.yml
 out.md
 logs
 tasks/
-sessions.md
+SESSION.md
+TODO.md
+out/

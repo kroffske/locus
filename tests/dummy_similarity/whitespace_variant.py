@@ -7,8 +7,7 @@ Purpose:
 """
 
 
-def util_sum(a,    b):
+def util_sum(a, b):
     """Return the sum of two values (dummy)."""
-    tmp   =   a + b
-    return    tmp
-
+    tmp = a + b
+    return tmp

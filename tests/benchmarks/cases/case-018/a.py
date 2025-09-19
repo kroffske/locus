@@ -7,4 +7,3 @@ class Stack:
 
     def pop(self):
         return self._data.pop()
-

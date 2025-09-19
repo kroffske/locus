@@ -54,17 +54,16 @@ def find_and_read_readme(project_path: str) -> Optional[str]:
 
 
 def _find_config_root(start_path: str) -> str:
-    """Finds the directory to load config from by walking up for .locus*/.claude* or .git.
+    """Finds the directory to load config from by walking up for .locus or .git.
     Falls back to current working directory if nothing is found.
     """
     cur = os.path.abspath(start_path)
     root = os.path.abspath(os.path.sep)
     while True:
         candidates = [
+            os.path.join(cur, ".locus"),
             os.path.join(cur, ".locusallow"),
             os.path.join(cur, ".locusignore"),
-            os.path.join(cur, ".claudeallow"),
-            os.path.join(cur, ".claudeignore"),
         ]
         if any(os.path.exists(p) for p in candidates) or os.path.isdir(os.path.join(cur, ".git")):
             return cur
@@ -96,8 +95,8 @@ def analyze(
     # Load README from config root
     result.project_readme_content = find_and_read_readme(config_root)
     if not allow_patterns:
-        allow_patterns = {"**/*.py", "**/*.md", "**/README*"}  # Default if .claudeallow is missing
-        logger.info(f"No .claudeallow file found, defaulting to: {allow_patterns}")
+        allow_patterns = {"**/*.py", "**/*.md", "**/README*"}  # Default if no allow patterns found
+        logger.info(f"No allow patterns found, defaulting to: {allow_patterns}")
 
     # 2. Scan Directory and apply ignore/allow patterns
     try:

@@ -120,8 +120,9 @@ cat changes.md | locus update --backup
 - `AnalysisResult` aggregates all analysis outputs and includes `project_readme_content`
 
 **Configuration System**:
-- `.locusallow` and `.locusignore` files control file inclusion/exclusion (with `.claudeallow`/`.claudeignore` as fallback for compatibility)
-- Default config files are automatically created on first run if they don't exist
+- `.locus/allow` and `.locus/ignore` files control file inclusion/exclusion (stored in `.locus/` directory)
+- Legacy `.locusallow` and `.locusignore` files in project root are still supported for backwards compatibility
+- Default config files are automatically created in `.locus/` directory on first run if no configuration exists
 - Pattern matching uses glob patterns with sensible defaults
 - Configuration is loaded once and passed through the pipeline
 

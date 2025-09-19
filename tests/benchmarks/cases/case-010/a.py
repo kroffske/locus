@@ -3,4 +3,3 @@ def average(values):
     for v in values:
         total += v
     return total / len(values)
-

@@ -5,4 +5,3 @@ def to_ints(texts):
         if t:
             res.append(int(t))
     return res
-

@@ -80,10 +80,7 @@ def parse_arguments() -> argparse.Namespace:
     analyze_parser.add_argument(
         "-o",
         "--output",
-        help=(
-            "Output destination (optional). Write to a file (.md) or directory; "
-            "if omitted, the report is printed to stdout (console)."
-        ),
+        help=("Output destination (optional). Write to a file (.md) or directory; if omitted, the report is printed to stdout (console)."),
     )
     # File Selection Group for Analyze
     file_selection = analyze_parser.add_argument_group("File Selection")
@@ -113,7 +110,7 @@ def parse_arguments() -> argparse.Namespace:
         "-a",
         "--annotations",
         action="store_true",
-        help=("Include Python annotations (docstrings, imports, function/class signatures). " "In report mode adds an 'Annotations' section; in directory mode writes OUT.md."),
+        help=("Include Python annotations (docstrings, imports, function/class signatures). In report mode adds an 'Annotations' section; in directory mode writes OUT.md."),
     )
     output_formatting.add_argument("-t", "--tree", action="store_true", help="Show tree in report")
     output_formatting.add_argument("-f", "--flat", action="store_true", help="Show flat list: path  # summary")
@@ -207,6 +204,18 @@ def parse_arguments() -> argparse.Namespace:
     update_parser.add_argument("--dry-run", action="store_true", help="Preview changes only")
     update_parser.add_argument("--no-color", action="store_true", help="Disable color")
 
+    # --- INIT Sub-command ---
+    init_parser = subparsers.add_parser(
+        "init",
+        help="Initialize project with template files (CLAUDE.md, TESTS.md, SESSION.md, TODO.md).",
+        description="Create template documentation files in the current directory.",
+        formatter_class=argparse.HelpFormatter,
+    )
+    init_parser.add_argument("--force", action="store_true", help="Overwrite existing template files without prompting")
+    init_parser.add_argument("--non-interactive", action="store_true", help="Don't prompt for individual files; ask once for all conflicts")
+    init_parser.add_argument("--project-name", help="Project name to use in templates (defaults to directory name)")
+    init_parser.add_argument("--no-color", action="store_true", help="Disable color")
+
     # Capture original argv to differentiate top-level help vs subcommand help
     original_argv = sys.argv[1:]
 
@@ -227,13 +236,15 @@ def parse_arguments() -> argparse.Namespace:
             ("", "  analyze   Analyze code and generate a report (default)"),
             ("", "  sim       Run similarity/duplicate detection only"),
             ("", "  update    Update local files from Markdown via stdin"),
+            ("", "  init      Initialize project with template files"),
             ("", ""),
             ("subheader", "Quick Start"),
             ("", "  locus analyze -p"),
+            ("", "  locus init                           # create template files"),
             ("", "  locus update --dry-run < blocks.md   # preview changes"),
             ("", "  locus update --backup < blocks.md    # write files with .bak"),
             ("", ""),
-            ("", "Hint: use 'locus analyze --help' or 'locus update --help' for details."),
+            ("", "Hint: use 'locus <command> --help' for command-specific details."),
         ]
 
         if console:
@@ -250,7 +261,7 @@ def parse_arguments() -> argparse.Namespace:
 
     # Pre-parse to allow calling without explicit subcommand (default to 'analyze')
     argv = list(original_argv)
-    if argv and argv[0] not in {"analyze", "update", "sim"}:
+    if argv and argv[0] not in {"analyze", "update", "sim", "init"}:
         argv = ["analyze"] + argv
     args = parser.parse_args(argv)
 
@@ -279,12 +290,12 @@ def parse_arguments() -> argparse.Namespace:
             ("", "  -t, --tree        Show tree in report  (use --no-tree to hide)"),
             (
                 "",
-                "  -a, --annotations Include Python annotations (docstrings, imports, signatures);" " adds section in report or OUT.md in dir mode",
+                "  -a, --annotations Include Python annotations (docstrings, imports, signatures); adds section in report or OUT.md in dir mode",
             ),
             ("", "  --code / --no-code  Include or exclude full file contents"),
             (
                 "",
-                "  -d, --depth N     Import depth: 0=off, 1=direct, 2=nested, -1=unlimited" " (e.g., main->utils is 1; utils->helpers is 2)",
+                "  -d, --depth N     Import depth: 0=off, 1=direct, 2=nested, -1=unlimited (e.g., main->utils is 1; utils->helpers is 2)",
             ),
             ("", "  -o, --output PATH Optional file/dir; omit to print to stdout"),
             ("", "  --include PATTERN  Glob patterns to include (e.g., 'src/**/*.py' '*.md')"),

@@ -5,4 +5,3 @@ def count_vowels(s: str) -> int:
         if ch in vowels:
             c += 1
     return c
-

@@ -4,4 +4,3 @@ def sum_if_even(xs):
         if x % 2 == 0:
             total += x
     return total
-
