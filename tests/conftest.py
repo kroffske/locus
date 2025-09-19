@@ -12,8 +12,10 @@ def project_structure(tmp_path: Path):
     project_root.mkdir()
 
     # --- Create config files ---
-    (project_root / ".claudeallow").write_text("*.py\n*.md\n*.csv\n")
-    (project_root / ".claudeignore").write_text("build/\n*.log\n")
+    locus_dir = project_root / ".locus"
+    locus_dir.mkdir()
+    (locus_dir / "allow").write_text("*.py\n*.md\n*.csv\n")
+    (locus_dir / "ignore").write_text("build/\n*.log\n")
 
     # --- Create source directory ---
     src_dir = project_root / "src"

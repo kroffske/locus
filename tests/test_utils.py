@@ -7,7 +7,7 @@ from locus.utils.file_cache import FileCache
 
 
 def test_load_project_config(project_structure: Path):
-    """Test loading of .claudeignore and .claudeallow files."""
+    """Test loading of .locus/ignore and .locus/allow files."""
     ignore_patterns, allow_patterns = config.load_project_config(str(project_structure))
     assert "*.py" in allow_patterns
     assert "*.md" in allow_patterns
