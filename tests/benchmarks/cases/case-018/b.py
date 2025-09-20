@@ -7,4 +7,3 @@ class Lifo:
 
     def remove(self):
         return self._items.pop()
-

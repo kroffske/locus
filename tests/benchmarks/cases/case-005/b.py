@@ -4,4 +4,3 @@ def max_in_list(xs):
         if v > m:  # same logic
             m = v
     return m
-

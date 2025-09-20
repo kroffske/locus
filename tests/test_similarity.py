@@ -130,14 +130,8 @@ def test_similarity_json_dump_basic(project_structure: Path, tmp_path: Path):
 
     # Serialize to JSON structure similar to CLI helper
     payload = {
-        "units": [
-            {"id": u.id, "rel_path": u.rel_path, "qualname": u.qualname, "span": list(u.span)}
-            for u in sim.units
-        ],
-        "clusters": [
-            {"id": c.id, "member_ids": list(c.member_ids), "strategy": c.strategy}
-            for c in sim.clusters
-        ],
+        "units": [{"id": u.id, "rel_path": u.rel_path, "qualname": u.qualname, "span": list(u.span)} for u in sim.units],
+        "clusters": [{"id": c.id, "member_ids": list(c.member_ids), "strategy": c.strategy} for c in sim.clusters],
     }
     out = tmp_path / "sim.json"
     out.write_text(json.dumps(payload))

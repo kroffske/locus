@@ -9,4 +9,3 @@ class Stats:
 
     def mean(self) -> float:
         return self.total / self.count if self.count else 0.0
-

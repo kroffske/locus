@@ -7,4 +7,3 @@ def join_path(parts):
         else:
             out = seg
     return out
-

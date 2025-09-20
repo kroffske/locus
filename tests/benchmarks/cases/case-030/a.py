@@ -6,4 +6,3 @@ def argmin(xs):
             best_v = xs[i]
             best_i = i
     return best_i
-

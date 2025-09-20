@@ -7,4 +7,3 @@ class SimpleCache:
             return self._data[key]
         self._data[key] = default
         return default
-

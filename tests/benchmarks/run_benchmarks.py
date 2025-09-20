@@ -18,12 +18,12 @@ Semantics:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from dataclasses import dataclass
-import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple, Iterable
+from typing import Dict, Iterable, List, Tuple
 
 try:
     import yaml  # type: ignore
@@ -137,20 +137,20 @@ def run_case_with_strategy(case: CaseSpec, strat: str) -> Tuple[str, str, Dict]:
             failures.append(f"Unknown relation '{relation}' for {left}-{right}")
 
     status = "PASS" if not failures else "FAIL"
-    msg = (
-        f"strategy={strat} · pos {pos_detected}/{pos_expected}"
-        f" · neg_fp {neg_fp}/{neg_expected}"
-        f" · missing {missing_pairs}"
+    msg = f"strategy={strat} · pos {pos_detected}/{pos_expected} · neg_fp {neg_fp}/{neg_expected} · missing {missing_pairs}"
+    return (
+        status,
+        msg,
+        {
+            "strategy": strat,
+            "positives_expected": pos_expected,
+            "positives_detected": pos_detected,
+            "negatives_expected": neg_expected,
+            "negatives_fp": neg_fp,
+            "missing_pairs": missing_pairs,
+            "failures": failures,
+        },
     )
-    return status, msg, {
-        "strategy": strat,
-        "positives_expected": pos_expected,
-        "positives_detected": pos_detected,
-        "negatives_expected": neg_expected,
-        "negatives_fp": neg_fp,
-        "missing_pairs": missing_pairs,
-        "failures": failures,
-    }
 
 
 def main() -> int:
@@ -196,7 +196,7 @@ def main() -> int:
             grand_json[strat]["cases"].append({"case": case.id, "status": status, "message": msg, **det})
         print("-" * 60)
         print(
-            "Summary:" 
+            "Summary:"
             f" cases PASS={metrics['cases_pass']} FAIL={metrics['cases_fail']} TOTAL={len(results)} |"
             f" pos {metrics['positives_detected']}/{metrics['positives_expected']}"
             f" neg_fp {metrics['negatives_fp']}/{metrics['negatives_expected']}"
