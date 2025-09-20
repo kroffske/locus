@@ -134,7 +134,7 @@ def create_claude_symlink(target_dir: Path) -> bool:
 
     # Create symlink
     try:
-        if os.name == 'nt':  # Windows
+        if os.name == "nt":  # Windows
             # Use relative path for better portability
             claude_path.symlink_to("AGENTS.md")
         else:  # Unix-like systems
