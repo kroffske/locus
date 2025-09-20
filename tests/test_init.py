@@ -20,9 +20,9 @@ from locus.init.templates import get_default_templates, get_template_content
 class TestTemplates:
     """Test template content generation."""
 
-    def test_get_template_content_claude(self):
-        """Test CLAUDE template generation."""
-        content = get_template_content("claude", {"project_name": "test_project"})
+    def test_get_template_content_agents(self):
+        """Test AGENTS template generation."""
+        content = get_template_content("agents", {"project_name": "test_project"})
         assert "# AI Agent Guidelines — test_project" in content
         assert "**Goal:** Fast, reliable changes with tight quality gates." in content
         assert "pytest -q" in content
@@ -78,12 +78,14 @@ class TestTemplates:
         """Test default template mapping."""
         templates = get_default_templates()
         expected = {
-            "CLAUDE.md": "claude",
-            "TESTS.md": "tests",
-            "SESSION.md": "session",
-            "TODO.md": "todo",
+            "AGENTS.md": "agents",
             "ARCHITECTURE.md": "architecture",
+            "DEEPDIVE_PROMTING.md": "deepdive",
             ".mcp.json": "mcp",
+            "README.md": "readme",
+            "SESSION.md": "session",
+            "TESTS.md": "tests",
+            "TODO.md": "todo",
         }
         assert templates == expected
 
@@ -141,73 +143,73 @@ class TestCreatorLogic:
         result = prompt_user_for_overwrite(set())
         assert result is True
 
-    @patch("locus.init.creator.confirm", side_effect=[True, False])
+    @patch("locus.init.creator.confirm", side_effect=[True, False, True])
     def test_prompt_user_for_each_file(self, mock_confirm):
         """Test prompting for each file individually."""
-        existing = {"CLAUDE.md", "TESTS.md", "SESSION.md"}
+        existing = {"AGENTS.md", "TESTS.md", "SESSION.md"}
         result = prompt_user_for_each_file(existing)
 
-        # Files are processed in sorted order: CLAUDE.md, SESSION.md, TESTS.md
-        # Responses: True, False -> CLAUDE.md (True=yes), SESSION.md (False=no), then breaks
-        # Due to new break behavior, only CLAUDE.md is processed
-        expected = {"CLAUDE.md"}
+        # Files are processed in sorted order: AGENTS.md, SESSION.md, TESTS.md
+        # Responses: True, False, True -> AGENTS.md (yes), SESSION.md (no), TESTS.md (yes)
+        # With new behavior, continues asking even after "no"
+        expected = {"AGENTS.md", "TESTS.md"}
         assert result == expected
-        assert mock_confirm.call_count == 2  # Only called twice before break
+        assert mock_confirm.call_count == 3  # All files are asked about
 
     @patch("locus.init.creator.confirm", side_effect=KeyboardInterrupt())
     def test_prompt_user_for_each_file_interrupt(self, mock_confirm):
         """Test handling keyboard interrupt during individual prompts."""
-        existing = {"CLAUDE.md", "TESTS.md"}
+        existing = {"AGENTS.md", "TESTS.md"}
         result = prompt_user_for_each_file(existing)
         assert result == set()
 
     def test_create_template_files_success(self, tmp_path: Path):
         """Test successful template file creation."""
-        template_files = {"CLAUDE.md": "claude", "TESTS.md": "tests"}
+        template_files = {"AGENTS.md": "agents", "TESTS.md": "tests"}
         substitutions = {"project_name": "test_project"}
-        files_to_create = {"CLAUDE.md", "TESTS.md"}
+        files_to_create = {"AGENTS.md", "TESTS.md"}
 
         created = create_template_files(tmp_path, template_files, substitutions, files_to_create)
 
-        assert set(created) == {"CLAUDE.md", "TESTS.md"}
-        assert (tmp_path / "CLAUDE.md").exists()
+        assert set(created) == {"AGENTS.md", "TESTS.md"}
+        assert (tmp_path / "AGENTS.md").exists()
         assert (tmp_path / "TESTS.md").exists()
 
-        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
-        assert "test_project" in claude_content
+        agents_content = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        assert "test_project" in agents_content
 
     def test_create_template_files_subset(self, tmp_path: Path):
         """Test creating only a subset of template files."""
-        template_files = {"CLAUDE.md": "claude", "TESTS.md": "tests", "SESSION.md": "session"}
-        files_to_create = {"CLAUDE.md", "SESSION.md"}
+        template_files = {"AGENTS.md": "agents", "TESTS.md": "tests", "SESSION.md": "session"}
+        files_to_create = {"AGENTS.md", "SESSION.md"}
 
         created = create_template_files(tmp_path, template_files, files_to_create=files_to_create)
 
-        assert set(created) == {"CLAUDE.md", "SESSION.md"}
-        assert (tmp_path / "CLAUDE.md").exists()
+        assert set(created) == {"AGENTS.md", "SESSION.md"}
+        assert (tmp_path / "AGENTS.md").exists()
         assert not (tmp_path / "TESTS.md").exists()
         assert (tmp_path / "SESSION.md").exists()
 
     def test_create_template_files_unknown_template(self, tmp_path: Path):
         """Test error handling for unknown template in files_to_create."""
-        template_files = {"CLAUDE.md": "claude"}
-        files_to_create = {"CLAUDE.md", "UNKNOWN.md"}
+        template_files = {"AGENTS.md": "agents"}
+        files_to_create = {"AGENTS.md", "UNKNOWN.md"}
 
         created = create_template_files(tmp_path, template_files, files_to_create=files_to_create)
 
         # Should create known file and skip unknown
-        assert created == ["CLAUDE.md"]
-        assert (tmp_path / "CLAUDE.md").exists()
+        assert created == ["AGENTS.md"]
+        assert (tmp_path / "AGENTS.md").exists()
 
     def test_create_template_files_io_error(self, tmp_path: Path):
         """Test error handling for I/O errors during file creation."""
         # Create a directory where we expect a file
-        (tmp_path / "CLAUDE.md").mkdir()
+        (tmp_path / "AGENTS.md").mkdir()
 
-        template_files = {"CLAUDE.md": "claude"}
-        files_to_create = {"CLAUDE.md"}
+        template_files = {"AGENTS.md": "agents"}
+        files_to_create = {"AGENTS.md"}
 
-        with pytest.raises(InitError, match="Failed to create CLAUDE.md"):
+        with pytest.raises(InitError, match="Failed to create AGENTS.md"):
             create_template_files(tmp_path, template_files, files_to_create=files_to_create)
 
 
@@ -218,15 +220,17 @@ class TestInitProject:
         """Test successful initialization in empty directory."""
         created = init_project(target_dir=tmp_path, project_name="test_project")
 
-        expected_files = {"CLAUDE.md", "TESTS.md", "SESSION.md", "TODO.md", "ARCHITECTURE.md", ".mcp.json"}
+        expected_files = {"AGENTS.md", "ARCHITECTURE.md", "DEEPDIVE_PROMTING.md", ".mcp.json", "README.md", "SESSION.md", "TESTS.md", "TODO.md", "CLAUDE.md (symlink)"}
         assert set(created) == expected_files
 
-        for filename in expected_files:
+        # Check physical files exist (excluding symlink notation)
+        physical_files = {"AGENTS.md", "ARCHITECTURE.md", "DEEPDIVE_PROMTING.md", ".mcp.json", "README.md", "SESSION.md", "TESTS.md", "TODO.md", "CLAUDE.md"}
+        for filename in physical_files:
             assert (tmp_path / filename).exists()
 
         # Check content substitution
-        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
-        assert "test_project" in claude_content
+        agents_content = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        assert "test_project" in agents_content
 
     def test_init_project_default_project_name(self, tmp_path: Path):
         """Test that project name defaults to directory name."""
@@ -235,53 +239,58 @@ class TestInitProject:
         claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
         assert tmp_path.name in claude_content
 
-    def test_init_project_force_overwrite(self, tmp_path: Path):
+    @patch("locus.init.creator.create_claude_symlink", return_value=True)
+    def test_init_project_force_overwrite(self, mock_symlink, tmp_path: Path):
         """Test force overwrite of existing files."""
         # Create existing file with different content
-        (tmp_path / "CLAUDE.md").write_text("old content")
+        (tmp_path / "AGENTS.md").write_text("old content")
 
         created = init_project(target_dir=tmp_path, force=True, project_name="test_project")
 
-        assert "CLAUDE.md" in created
-        claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
-        assert "old content" not in claude_content
-        assert "test_project" in claude_content
+        assert "AGENTS.md" in created
+        assert "CLAUDE.md (symlink)" in created
+        agents_content = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+        assert "old content" not in agents_content
+        assert "test_project" in agents_content
 
     @patch("locus.init.creator.prompt_user_for_overwrite", return_value=True)
-    def test_init_project_user_confirms_overwrite(self, mock_prompt, tmp_path: Path):
+    @patch("locus.init.creator.create_claude_symlink", return_value=True)
+    def test_init_project_user_confirms_overwrite(self, mock_symlink, mock_prompt, tmp_path: Path):
         """Test non-interactive mode with user confirming overwrite."""
-        (tmp_path / "CLAUDE.md").write_text("existing")
+        (tmp_path / "AGENTS.md").write_text("existing")
 
         created = init_project(target_dir=tmp_path, interactive=False)
 
-        assert "CLAUDE.md" in created
+        assert "AGENTS.md" in created
+        assert "CLAUDE.md (symlink)" in created
         mock_prompt.assert_called_once()
 
     @patch("locus.init.creator.prompt_user_for_overwrite", return_value=False)
     def test_init_project_user_rejects_overwrite(self, mock_prompt, tmp_path: Path):
         """Test non-interactive mode with user rejecting overwrite."""
-        (tmp_path / "CLAUDE.md").write_text("existing")
+        (tmp_path / "AGENTS.md").write_text("existing")
 
         with pytest.raises(FileConflictError):
             init_project(target_dir=tmp_path, interactive=False)
 
     @patch("locus.init.creator.prompt_user_for_each_file")
-    def test_init_project_interactive_mode(self, mock_prompt, tmp_path: Path):
+    @patch("locus.init.creator.create_claude_symlink", return_value=True)
+    def test_init_project_interactive_mode(self, mock_symlink, mock_prompt, tmp_path: Path):
         """Test interactive mode with individual file prompts."""
-        (tmp_path / "CLAUDE.md").write_text("existing")
+        (tmp_path / "AGENTS.md").write_text("existing")
         (tmp_path / "TESTS.md").write_text("existing")
 
-        # User chooses to overwrite only CLAUDE.md
-        mock_prompt.return_value = {"CLAUDE.md"}
+        # User chooses to overwrite only AGENTS.md
+        mock_prompt.return_value = {"AGENTS.md"}
 
         created = init_project(target_dir=tmp_path, interactive=True)
 
-        # Should create CLAUDE.md (overwrite), SESSION.md, TODO.md, ARCHITECTURE.md, .mcp.json (new)
+        # Should create AGENTS.md (overwrite), and new files, plus symlink
         # Should NOT recreate TESTS.md (user said no)
-        expected_created = {"CLAUDE.md", "SESSION.md", "TODO.md", "ARCHITECTURE.md", ".mcp.json"}
+        expected_created = {"AGENTS.md", "ARCHITECTURE.md", "DEEPDIVE_PROMTING.md", ".mcp.json", "README.md", "SESSION.md", "TODO.md", "CLAUDE.md (symlink)"}
         assert set(created) == expected_created
 
-        mock_prompt.assert_called_once_with({"CLAUDE.md", "TESTS.md"})
+        mock_prompt.assert_called_once_with({"AGENTS.md", "TESTS.md"})
 
     def test_init_project_nonexistent_directory(self):
         """Test error handling for nonexistent target directory."""
@@ -304,5 +313,7 @@ class TestInitProject:
 
         created = init_project(target_dir=None, project_name="test_project")
 
-        assert len(created) == 6  # Should create all default files
-        assert (tmp_path / "CLAUDE.md").exists()
+        assert len(created) == 9  # Should create all default files + symlink
+        assert (tmp_path / "AGENTS.md").exists()
+        assert (tmp_path / "CLAUDE.md").exists()  # Symlink
+        assert (tmp_path / "ARCHITECTURE.md").exists()

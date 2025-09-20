@@ -82,14 +82,69 @@ def prompt_user_for_each_file(existing_files: Set[str]) -> Set[str]:
             if confirm(f"Overwrite existing {filename}?"):
                 files_to_overwrite.add(filename)
             else:
-                # If user declines to overwrite a file, stop asking for other files in this mode
-                logger.info("Initialization cancelled by user for remaining files.")
-                break
+                # Continue asking about other files even if user declines one
+                logger.info(f"Skipping {filename}")
         except (EOFError, KeyboardInterrupt):
             logger.info("Initialization cancelled by user.")
             break
 
     return files_to_overwrite
+
+
+def create_claude_symlink(target_dir: Path) -> bool:
+    """Create CLAUDE.md as a symlink to AGENTS.md if AGENTS.md exists.
+
+    Args:
+        target_dir: Directory where files should be created
+
+    Returns:
+        True if symlink was created, False otherwise
+    """
+    agents_path = target_dir / "AGENTS.md"
+    claude_path = target_dir / "CLAUDE.md"
+
+    if not agents_path.exists():
+        return False
+
+    # If CLAUDE.md already exists, ask user if they want to replace it
+    if claude_path.exists():
+        if claude_path.is_symlink():
+            # Already a symlink, check if it points to AGENTS.md
+            try:
+                if claude_path.resolve() == agents_path.resolve():
+                    logger.info("CLAUDE.md symlink already points to AGENTS.md")
+                    return True
+            except OSError:
+                pass  # Broken symlink, proceed to replace
+
+        try:
+            if not confirm("Replace existing CLAUDE.md with symlink to AGENTS.md?"):
+                logger.info("Skipping CLAUDE.md symlink creation")
+                return False
+        except (EOFError, KeyboardInterrupt):
+            logger.info("Skipping CLAUDE.md symlink creation")
+            return False
+
+        # Remove existing file/symlink
+        try:
+            claude_path.unlink()
+        except OSError as e:
+            logger.warning(f"Failed to remove existing CLAUDE.md: {e}")
+            return False
+
+    # Create symlink
+    try:
+        if os.name == 'nt':  # Windows
+            # Use relative path for better portability
+            claude_path.symlink_to("AGENTS.md")
+        else:  # Unix-like systems
+            claude_path.symlink_to("AGENTS.md")
+
+        logger.info("Created CLAUDE.md symlink to AGENTS.md")
+        return True
+    except OSError as e:
+        logger.warning(f"Failed to create CLAUDE.md symlink: {e}")
+        return False
 
 
 def create_template_files(
@@ -203,6 +258,12 @@ def init_project(
     # Create the files
     try:
         created_files = create_template_files(target_dir, template_files, substitutions, files_to_create)
+
+        # Try to create CLAUDE.md symlink after AGENTS.md is created
+        if "AGENTS.md" in created_files or (target_dir / "AGENTS.md").exists():
+            if create_claude_symlink(target_dir):
+                created_files.append("CLAUDE.md (symlink)")
+
         logger.info(f"Successfully initialized project in {target_dir}")
         logger.info(f"Created {len(created_files)} template files")
         return created_files

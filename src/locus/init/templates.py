@@ -12,13 +12,14 @@ logger = logging.getLogger(__name__)
 
 # Template file mappings
 TEMPLATE_FILES = {
-    "claude": "CLAUDE.md.template",
-    "tests": "TESTS.md.template",
-    "session": "SESSION.md.template",
-    "todo": "TODO.md.template",
-    "readme": "README.md.template",
-    "architecture": "ARCHITECTURE.md.template",
-    "mcp": "mcp.json.template",
+    "agents": "AGENTS.template.md",
+    "architecture": "ARCHITECTURE.template.md",
+    "deepdive": "DEEPDIVE_PROMTING.template.md",
+    "mcp": "mcp.template.json",
+    "readme": "README.template.md",
+    "session": "SESSION.template.md",
+    "tests": "TESTS.template.md",
+    "todo": "TODO.template.md",
 }
 
 
@@ -57,7 +58,7 @@ def get_template_content(template_name: str, substitutions: Dict[str, str] = Non
     """Get template content with optional substitutions.
 
     Args:
-        template_name: Name of the template ('claude', 'tests', 'session', 'todo', 'readme', 'architecture', 'mcp')
+        template_name: Name of the template ('agents', 'architecture', 'deepdive', 'mcp', 'readme', 'session', 'tests', 'todo')
         substitutions: Dict of key-value pairs for string substitution
 
     Returns:
@@ -87,10 +88,12 @@ def get_default_templates() -> Dict[str, str]:
         Dict mapping filename to template name
     """
     return {
-        "CLAUDE.md": "claude",
-        "TESTS.md": "tests",
-        "SESSION.md": "session",
-        "TODO.md": "todo",
+        "AGENTS.md": "agents",
         "ARCHITECTURE.md": "architecture",
+        "DEEPDIVE_PROMTING.md": "deepdive",
         ".mcp.json": "mcp",
+        "README.md": "readme",
+        "SESSION.md": "session",
+        "TESTS.md": "tests",
+        "TODO.md": "todo",
     }

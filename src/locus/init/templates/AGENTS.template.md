@@ -2,21 +2,41 @@
 
 **Goal:** Fast, reliable changes with tight quality gates.
 
+## 📋 Table of Contents
+
+| Section | Description |
+|---------|-------------|
+| `<tools_and_mcp>` | Essential tools and MCP server configurations |
+| `<llm_prompt_patterns>` | Prompt patterns for subagents and workflow |
+| `<quick_checklist>` | Fast validation checklist for contributions |
+| `<core_principles>` | Golden rules and development workflow |
+| `<quality_gates>` | Commands and definition of done |
+| `<architecture_patterns>` | Layer separation and code structure |
+| `<error_handling>` | Exception handling strategy by layer |
+| `<configuration_management>` | Extract-transform-pass patterns |
+| `<anti_patterns>` | Critical mistakes to avoid |
+| `<project_context>` | Project-specific workflow and modules |
+| `<contribution_guide>` | Documentation and decision framework |
+
 <tools_and_mcp>
 ## Recommended Tools & MCP Servers
 
 ### Essential Tools for AI Agents
-- **Code Analysis**: Use project-specific analysis tools for understanding codebase structure
+- **Code Analysis**: Use `locus analyze` to understand codebase structure and scope changes
+  ```bash
+  # Quick overview of project structure
+  locus analyze
+
+  # Analyze specific module to understand scope
+  locus analyze src/module_name/
+
+  # Get full report for comprehensive analysis
+  locus analyze -o analysis.md
+  ```
 - **File Operations**: Prefer `Read`, `Write`, `Edit` tools over shell commands for file manipulation
 - **Search**: Use `Grep` and `Glob` tools for efficient code searching
 - **Testing**: Use `Bash` tool for running tests and quality checks
 - **Version Control**: Use `Bash` tool for git operations (status, diff, commit)
-
-### Recommended MCP Servers
-- **Sequential Thinking**: For complex reasoning and planning tasks
-- **Filesystem**: For advanced file operations and directory traversal
-- **Git**: For sophisticated version control operations
-- **Database**: If your project uses databases for development
 
 ### Tool Usage Guidelines
 - **Read before Edit**: Always read files before making changes
@@ -26,8 +46,84 @@
 - **Documentation**: Update relevant documentation when making significant changes
 
 ### MCP Configuration
-See `.mcp.json` for current server configuration. Add new servers as needed for project-specific requirements.
+
+#### Currently Available MCP Servers
+- **Sequential Thinking**: Use for complex planning and step-by-step reasoning
+  - When: Breaking down complex tasks, analyzing trade-offs, planning implementation steps
+  - Example: "Think through the implications of this architectural change step by step"
+
+- **Locus Analyzer** (future): For focused code analysis and change scoping
+  - When: Need to understand what files to modify for a specific feature
+  - Example: "Use locus to identify all files related to authentication before making changes"
+
+#### MCP Usage Guidelines
+- **Planning Phase**: Use Sequential Thinking MCP for complex reasoning and task breakdown
+- **Analysis Phase**: Use Locus MCP (when available) to scope changes and understand dependencies
+- **Implementation Phase**: Use core tools (Read, Write, Edit) for file operations
+- **Validation Phase**: Use Bash tool for testing and quality checks
 </tools_and_mcp>
+
+<llm_prompt_patterns>
+## LLM Prompt Patterns for Effective Development
+
+### Core Workflow Prompts for Subagents
+
+Use these patterns when invoking subagents to save context and provide clear instructions:
+
+#### Analysis Phase (for Task/Agent tool)
+```
+"Use the Task tool with general-purpose agent: Analyze the requirements for [feature]. List key tasks, dependencies, and potential challenges. Return a structured breakdown without implementing anything."
+```
+
+#### Planning Phase (with Sequential Thinking MCP)
+```
+"Use Sequential Thinking MCP: Create detailed implementation plan for [feature]. Break down into: core functions → formatting → orchestration. Consider layer separation and return step-by-step plan."
+```
+
+#### Implementation Phase (for focused tasks)
+```
+"Implement step X from the plan: [specific task]. Follow single-responsibility principle and maintain layer separation between core/formatting/orchestration."
+```
+
+#### Code Scope Analysis (future Locus MCP)
+```
+"Use Locus MCP: Identify all files that need modification for [feature]. Provide focused scope to minimize search overhead."
+```
+
+### Advanced Reasoning Prompts
+
+#### For Complex Problems
+```
+"Think step-by-step about this problem. Consider edge cases, dependencies, and potential failure modes before proposing a solution."
+```
+
+#### For Code Review
+```
+"Review this code for: 1) Layer separation violations, 2) Error handling issues, 3) Testing gaps, 4) Documentation needs."
+```
+
+#### For Debugging
+```
+"Analyze this error systematically: 1) Identify the failure point, 2) Trace the data flow, 3) Check layer boundaries, 4) Propose targeted fixes."
+```
+
+### Iterative Development Patterns
+
+#### Code Review Integration
+```
+"Process my review comments and apply the suggested changes. Focus on [specific areas of concern]."
+```
+
+#### Incremental Feature Development
+```
+"Add feature X using our layered architecture. Start with core logic, then add formatting layer, finally integrate with orchestration."
+```
+
+#### Refactoring Guidance
+```
+"Refactor this code to improve [specific aspect]. Maintain existing functionality while improving code quality and maintainability."
+```
+</llm_prompt_patterns>
 
 <quick_checklist>
 ## Quick Checklist for a Contribution
@@ -58,8 +154,30 @@ See `.mcp.json` for current server configuration. Add new servers as needed for 
 5.  **Fail Fast**: Raise narrow, specific exceptions. Never use `except Exception:` or return silent defaults.
     - *Why*: Errors don't propagate through system. Faster to find source of problem.
 
-### Required Workflow
-**analyze → plan → code → lint → format → test → if OK → log session & commit | else → fix**
+### Required Workflow: LLM-Driven Development Process
+**Analyze → Plan → Code → Test → Document → Quality Gates → Commit**
+
+#### Phase-by-Phase Guide
+
+1. **Analyze** – Carefully examine requirements. Gather context, clarify ambiguities.
+   - *LLM Instruction*: "Analyze the requirements before coding. List key tasks and questions first."
+   - *Why*: Prevents hasty coding. Ensures problem understanding before implementation.
+
+2. **Plan** – Create step-by-step solution strategy before writing code.
+   - *LLM Instruction*: "Outline a detailed plan in bullet points. Do not write any code yet."
+   - *Why*: Planning first significantly improves results on complex tasks. Guides focused implementation.
+
+3. **Code** – Implement according to approved plan. Write modular, incremental code.
+   - *LLM Instruction*: "Implement step X of the plan. Follow single-responsibility principle."
+   - *Why*: Structured implementation reduces errors. Easier to review and debug.
+
+4. **Test** – Run automated tests. Fix failures before proceeding.
+   - *LLM Instruction*: "Run tests and fix any failures. Do not proceed until tests pass."
+   - *Why*: Fail-fast philosophy. Catch issues early rather than accumulating technical debt.
+
+5. **Document** – Update docs, docstrings, README as needed.
+   - *LLM Instruction*: "Update documentation to reflect these changes."
+   - *Why*: Ensures implementation and usage are clearly recorded for future reference.
 </core_principles>
 
 <quality_gates>
@@ -285,61 +403,129 @@ def build_section_name(cfg, ctx):
 </configuration_management>
 
 <anti_patterns>
-## VI. Anti-patterns & Common Mistakes
+## VI. Critical Anti-patterns & Common Mistakes
 
-### ❌ Mixed Concerns
+### ❌ NEVER EVER: Dynamic Introspection
 ```python
-def build_data_table(events, id_col, name_col):
-    counts = compute_counts(events, id_col, name_col)
-    counts = counts.rename(columns={{"action": "Action"}})  # Formatting in analysis!
-    return counts
+# NEVER: Using getattr for dynamic method calls - creates silent failures
+action = "delete"
+getattr(self, f"{{action}}_item")()  # Fails silently if method doesn't exist
 ```
 
-### ✅ Separated Concerns
+### ✅ Explicit Dispatch
 ```python
-# core/
-def compute_action_distribution(events, id_col, name_col):
-    return counts  # Standard English columns
-
-# formatting/
-def format_action_table(counts_df):
-    return counts_df.rename(columns={{"action": "Action"}})
+# ALWAYS: Use explicit dispatch with clear error handling
+actions = {{"delete": self.delete_item, "create": self.create_item}}
+if action in actions:
+    actions[action]()
+else:
+    raise ValueError(f"Unknown action: {{action}}")
 ```
 
-### ❌ Config Overuse
+### ❌ CRITICAL: Broad Exception Handling
 ```python
-# Don't pass entire config to core functions
-def compute_metrics(events, config):  # Too much coupling
-    id_col = config.column_mapping.id_field  # Hidden dependency
+# NEVER: Swallowing all exceptions hides critical bugs
+try:
+    result = do_critical_operation()
+except Exception as e:
+    print("Error occurred:", e)  # Masks real problems
+    return None  # Silent failure
 ```
 
-### ✅ Explicit Parameters
+### ✅ Targeted Exception Handling
 ```python
-def compute_metrics(events, id_col: str, value_col: str):  # Clear interface
+# ALWAYS: Catch only what you can handle, let others bubble up
+try:
+    result = do_critical_operation()
+except SpecificError as e:
+    handle_specific_error(e)
+    # Let other exceptions propagate for debugging
+```
+
+### ❌ CRITICAL: Global State Dependencies
+```python
+# NEVER: Hidden global dependencies break testability
+CONFIG = {{"threshold": 5}}
+
+def check_value(x):
+    if x > CONFIG["threshold"]:  # Hidden dependency
+        ...
+```
+
+### ✅ Explicit Dependencies
+```python
+# ALWAYS: Make all dependencies visible in function signature
+def check_value(x, threshold=5):
+    if x > threshold:
+        ...
+```
+
+### 🎯 DECISION POINT: Simple Arguments vs Pydantic Models
+
+### ✅ Use Simple Arguments For:
+```python
+# Data transformation, plotting, core logic, Jupyter-friendly functions
+def plot_distribution(values: list[float], bins: int = 20, title: str = "") -> Figure:
+    """Easy to use in notebooks, clear parameters"""
+    pass
+
+def compute_statistics(data: pd.DataFrame, column: str, method: str = "mean") -> float:
+    """Core logic with minimal, explicit parameters"""
+    pass
+
+def transform_data(df: pd.DataFrame, normalize: bool = True, scale_factor: float = 1.0) -> pd.DataFrame:
+    """Data transformation with simple, testable interface"""
     pass
 ```
 
-### ❌ "God Functions"
+### ✅ Use Pydantic Models For:
 ```python
-def build_comprehensive_analysis(cfg, ctx):
-    # 500+ lines of mixed concerns
-    # Data loading + analysis + formatting + error handling
-    # Impossible to test or reuse
+# Cross-module coordination, 5+ related params, validation-critical scenarios
+@dataclass
+class AnalysisConfig:
+    input_columns: list[str]
+    output_format: str
+    validation_rules: dict
+    processing_options: dict
+    error_handling: str
+
+def generate_full_report(config: AnalysisConfig, data: pd.DataFrame) -> Report:
+    """When coordinating multiple operations with complex validation"""
+    pass
+
+def process_pipeline(config: PipelineConfig) -> Results:
+    """When you have many related settings that need validation"""
+    pass
 ```
 
-### ✅ Focused Functions
+### 🔍 Decision Guidelines:
+- **Simple args**: Can you easily call this in a notebook? < 5 parameters? Core computation?
+- **Pydantic model**: Cross-module? Complex validation? 5+ related parameters?
+- **Consistency rule**: Within the same submodule, stick to one approach
+
+### ❌ Silent Failures
 ```python
-def build_analysis_section(cfg, ctx):
-    # Extract configuration
-    data = extract_analysis_data(ctx, cfg.data_config)
+# NEVER: Return None to signal errors - they get ignored
+def find_user(username) -> User:
+    user = db.lookup(username)
+    if not user:
+        return None  # Silent failure
+    return user
+```
 
-    # Analyze with pure function
-    results = analyze_data(data, cfg.analysis_params)
+### ✅ Explicit Error Handling
+```python
+# ALWAYS: Be explicit about error conditions
+def find_user_optional(username: str) -> Optional[User]:
+    """Returns None if not found - callers must handle this"""
+    return db.lookup(username)
 
-    # Format for display
-    formatted = format_results(results, cfg.display_config)
-
-    return create_section("Analysis", formatted)
+def find_user_required(username: str) -> User:
+    """Raises exception if not found - use when user must exist"""
+    user = db.lookup(username)
+    if user is None:
+        raise UserNotFoundError(f"User '{{username}}' not found")
+    return user
 ```
 </anti_patterns>
 
@@ -347,7 +533,13 @@ def build_analysis_section(cfg, ctx):
 ## VII. Project Context
 
 ### Architecture Flow
-Add your project's main workflow here.
+<!-- <fill_project_specific_workflow>
+Describe your project's main workflow here. For example:
+- Input Processing: How data enters the system
+- Core Processing: Main business logic flow
+- Output Generation: How results are produced
+- Error Handling: How errors are managed across layers
+</fill_project_specific_workflow> -->
 
 ### Module Mapping
 *   **Core Logic**: `src/{{project_name}}/core/`
@@ -355,12 +547,38 @@ Add your project's main workflow here.
 *   **Output Generation**: `src/{{project_name}}/formatting/`
 *   **Data Models**: `src/{{project_name}}/models.py`
 
+<!-- <fill_additional_modules>
+Add project-specific modules here:
+*   **Custom Module**: `src/{{project_name}}/custom/`
+*   **Integration Layer**: `src/{{project_name}}/integrations/`
+*   **Utils**: `src/{{project_name}}/utils/`
+</fill_additional_modules> -->
+
 ### Data Flow Pattern
 ```
 Configuration → Core Analysis → Formatting → Output Generation → Error Handling
       ↓              ↓             ↓              ↓               ↓
 [Validation]   [Pure Logic]   [Styling]    [HTML/JSON]    [Graceful UX]
 ```
+
+<!-- <fill_project_data_flow>
+Customize this data flow for your project:
+```
+Input → Validation → Processing → Analysis → Output
+  ↓        ↓           ↓           ↓        ↓
+[Clean]  [Verify]   [Transform]  [Compute] [Format]
+```
+</fill_project_data_flow> -->
+
+### Project-Specific Best Practices
+<!-- <fill_project_conventions>
+Add project-specific conventions here:
+- Naming conventions for your domain
+- Specific error types used in your project
+- Domain-specific validation rules
+- Integration patterns with external services
+- Performance considerations for your use case
+</fill_project_conventions> -->
 </project_context>
 
 <contribution_guide>
@@ -371,6 +589,13 @@ Configuration → Core Analysis → Formatting → Output Generation → Error H
 *   Track live progress in **[TODO.md](TODO.md)** (gitignored)
 *   After completion, append notes to **[SESSION.md](SESSION.md)**
 *   **Debugging Hint**: Check **[SESSION.md](SESSION.md)** for similar issues fixed previously
+
+<!-- <fill_project_documentation>
+Add project-specific documentation references:
+*   Domain guide → see **[DOMAIN.md](DOMAIN.md)**
+*   API documentation → see **[API.md](API.md)**
+*   Deployment guide → see **[DEPLOY.md](DEPLOY.md)**
+</fill_project_documentation> -->
 
 ### Design Decision Framework
 
@@ -389,4 +614,15 @@ Configuration → Core Analysis → Formatting → Output Generation → Error H
 **Question 4**: Does this handle multiple error types from lower layers?
 - **Yes**: Put in presentation layer (error boundary)
 - **No**: Let specific errors bubble up to appropriate handler
+
+<!-- <fill_project_decision_questions>
+Add project-specific design decision questions:
+**Question 5**: Does this involve [domain-specific concern]?
+- **Yes**: Put in [specific layer]
+- **No**: Follow standard layer guidelines
+
+**Question 6**: Does this require [project-specific integration]?
+- **Yes**: Use [specific pattern]
+- **No**: Follow core patterns
+</fill_project_decision_questions> -->
 </contribution_guide>
