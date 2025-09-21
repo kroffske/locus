@@ -1,4 +1,5 @@
 """Dependency Injection container for wiring components."""
+
 from __future__ import annotations
 
 import logging
@@ -25,7 +26,9 @@ class Container:
             from ..components.embedding.embedding_component import EmbeddingComponent
 
             cfg = self._settings.embedding
-            logger.debug(f"Initializing EmbeddingComponent with model: {cfg.model_name}")
+            logger.debug(
+                f"Initializing EmbeddingComponent with model: {cfg.model_name}"
+            )
             self._embedding_component = EmbeddingComponent(
                 model_name=cfg.model_name, trust_remote_code=cfg.trust_remote_code
             )
@@ -36,8 +39,15 @@ class Container:
             from ..components.vector_store.lancedb_store import LanceDBVectorStore
 
             cfg = self._settings.vector_store
-            logger.debug(f"Initializing LanceDBVectorStore at path: {cfg.path}")
-            self._vector_store = LanceDBVectorStore(db_path=cfg.path)
+            embed_cfg = self._settings.embedding
+            logger.debug(
+                "Initializing LanceDBVectorStore at path %s (dim=%s)",
+                cfg.path,
+                embed_cfg.dimensions,
+            )
+            self._vector_store = LanceDBVectorStore(
+                db_path=cfg.path, dimensions=embed_cfg.dimensions
+            )
         return self._vector_store
 
     def ingest_component(self):

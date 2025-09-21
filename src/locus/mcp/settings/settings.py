@@ -15,7 +15,9 @@ def _load_yaml_config(path: Path) -> dict:
             with open(path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
     except ImportError:
-        print("PyYAML not installed, cannot load YAML settings. Please run: pip install 'locus-analyzer[mcp]'")
+        print(
+            "PyYAML not installed, cannot load YAML settings. Please run: pip install 'locus-analyzer[mcp]'"
+        )
     except Exception:
         pass
     return {}
@@ -26,6 +28,7 @@ class EmbeddingSettings(BaseSettings):
     model_name: str = "nomic-ai/CodeRankEmbed-v1"
     trust_remote_code: bool = True
     batch_size: int = 32  # New: tunable batch size for embeddings
+    dimensions: int = 1024
 
 
 class VectorStoreSettings(BaseSettings):
