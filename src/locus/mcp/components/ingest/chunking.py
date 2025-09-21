@@ -17,8 +17,18 @@ class Chunk:
 
 
 def chunk_file(
-    content: str, line_window: int = 150, overlap: int = 25
+    content: str, strategy: str = "lines", line_window: int = 150, overlap: int = 25
 ) -> List[Chunk]:
+    """Chunks file content using the specified strategy."""
+    if strategy == "lines":
+        return _chunk_lines(content, line_window, overlap)
+    elif strategy == "semantic":
+        return _chunk_semantic(content)
+    else:
+        raise ValueError(f"Unknown chunking strategy: {strategy}")
+
+
+def _chunk_lines(content: str, line_window: int, overlap: int) -> List[Chunk]:
     """Chunks file content using a simple line-window strategy."""
     chunks = []
     lines = content.splitlines()
@@ -42,3 +52,30 @@ def chunk_file(
             )
         )
     return chunks
+
+
+def _chunk_semantic(content: str) -> List[Chunk]:
+    """Placeholder for semantic chunking (e.g., via langchain or sentence boundaries)."""
+    # TODO: Implement semantic chunking, potentially with optional dep
+    try:
+        # Example: simple split by double newlines as placeholder
+        paragraphs = content.split("\n\n")
+        chunks = []
+        line = 1
+        for para in paragraphs:
+            if not para.strip():
+                continue
+            end_line = line + para.count("\n")
+            chunk_id = str(uuid.uuid4())
+            chunks.append(
+                Chunk(
+                    id=chunk_id,
+                    text=para,
+                    start=line,
+                    end=end_line,
+                )
+            )
+            line = end_line + 1
+        return chunks
+    except Exception:
+        raise ValueError("Semantic chunking requires additional dependencies or configuration.")

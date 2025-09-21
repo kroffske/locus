@@ -10,6 +10,29 @@ from .di.container import get_container
 logger = logging.getLogger(__name__)
 
 
+def check_deps() -> bool:
+    """Check for required MCP dependencies and log missing ones."""
+    missing = []
+    try:
+        import sentence_transformers  # noqa: F401
+    except ImportError:
+        missing.append("sentence-transformers")
+    try:
+        import lancedb  # noqa: F401
+    except ImportError:
+        missing.append("lancedb")
+    try:
+        import fastmcp  # noqa: F401
+    except ImportError:
+        missing.append("fastmcp")
+
+    if missing:
+        logger.error(f"Missing dependencies for MCP: {', '.join(missing)}")
+        logger.error("Install with: pip install 'locus-analyzer[mcp]'")
+        return False
+    return True
+
+
 def main():
     """Parses arguments and launches the MCP server."""
     # Setup logging immediately
@@ -30,6 +53,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if not check_deps():
+        sys.exit(1)
 
     container = get_container()
 

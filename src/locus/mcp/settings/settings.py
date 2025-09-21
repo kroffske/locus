@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,6 +25,7 @@ class EmbeddingSettings(BaseSettings):
     provider: str = "huggingface"
     model_name: str = "nomic-ai/CodeRankEmbed-v1"
     trust_remote_code: bool = True
+    batch_size: int = 32  # New: tunable batch size for embeddings
 
 
 class VectorStoreSettings(BaseSettings):
@@ -34,7 +34,7 @@ class VectorStoreSettings(BaseSettings):
 
 
 class IndexSettings(BaseSettings):
-    chunking_strategy: str = "lines"
+    chunking_strategy: str = "lines"  # New: "lines" or "semantic"
     max_lines: int = 150
     overlap: int = 25
 

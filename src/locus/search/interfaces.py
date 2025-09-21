@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Protocol
+from typing import Dict, Iterable, List, Protocol
 
 
 class VectorStore(Protocol):

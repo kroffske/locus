@@ -20,13 +20,19 @@ def get_file_context(
     except ImportError:
         raise ImportError("MCP types not found. Please install with: pip install 'locus-analyzer[mcp]'")
 
+    # Security: Validate path within repo root
+    repo_root = os.getcwd()
+    abs_path = os.path.abspath(os.path.join(repo_root, path))
+    if not abs_path.startswith(repo_root):
+        return [TextContent(text=f"Error: Invalid path '{path}' (outside repo).")]
+
     line_ranges = []
     if start_line and end_line:
         line_ranges.append((start_line, end_line))
 
     spec = TargetSpecifier(path=path, line_ranges=line_ranges)
     result = analyze(
-        project_path=os.getcwd(),
+        project_path=repo_root,
         target_specs=[spec],
         max_depth=0,
         include_patterns=None,

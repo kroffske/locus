@@ -1,4 +1,4 @@
-"""Dependency Injection container."""
+"""Dependency Injection container for wiring components."""
 from __future__ import annotations
 
 import logging

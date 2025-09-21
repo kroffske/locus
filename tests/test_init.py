@@ -234,7 +234,7 @@ class TestInitProject:
 
     def test_init_project_default_project_name(self, tmp_path: Path):
         """Test that project name defaults to directory name."""
-        created = init_project(target_dir=tmp_path)
+        init_project(target_dir=tmp_path)
 
         claude_content = (tmp_path / "CLAUDE.md").read_text(encoding="utf-8")
         assert tmp_path.name in claude_content

@@ -5,7 +5,7 @@ from typing import List
 from ...di.container import get_container
 
 
-def index_paths(
+async def index_paths(
     paths: List[str], force_rebuild: bool = False
 ) -> List[dict]:
     """Index or re-index a set of paths (folders or files)."""
@@ -18,7 +18,7 @@ def index_paths(
     ingest_component = container.ingest_component()
 
     try:
-        results = ingest_component.index_paths(paths, force_rebuild)
+        results = await ingest_component.index_paths(paths, force_rebuild)
         summary = (
             f"Indexing complete. Processed {results['files']} files, "
             f"created {results['chunks']} chunks."

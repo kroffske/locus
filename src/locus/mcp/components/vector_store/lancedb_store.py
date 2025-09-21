@@ -3,12 +3,6 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 
-class CodeChunkModel:
-    # This is a placeholder for the Pydantic model.
-    # We define it lazily to avoid a hard dependency on lancedb at the module level.
-    pass
-
-
 class LanceDBVectorStore:
     """Adapter for LanceDB vector store with lazy imports."""
 
@@ -21,7 +15,15 @@ class LanceDBVectorStore:
                 "LanceDB is not installed. Please install with: pip install 'locus-analyzer[mcp]'"
             )
 
-        # Define schema class inside the constructor
+        self.db = lancedb.connect(db_path)
+        self.table = self.db.create_table(
+            table_name, schema=self._get_code_chunk_model(), mode="overwrite_if_exists"
+        )
+
+    def _get_code_chunk_model(self):
+        """Factory to create and return the CodeChunkSchema class."""
+        from lancedb.pydantic import LanceModel, Vector
+
         class CodeChunkSchema(LanceModel):
             chunk_id: str
             repo_root: str
@@ -33,16 +35,9 @@ class LanceDBVectorStore:
             text: str
             vector: Vector(1024)  # For nomic-ai/CodeRankEmbed-v1
 
-        # Assign the dynamically created class to the placeholder
-        global CodeChunkModel
-        CodeChunkModel = CodeChunkSchema
+        return CodeChunkSchema
 
-        self.db = lancedb.connect(db_path)
-        self.table = self.db.create_table(
-            table_name, schema=CodeChunkSchema, mode="overwrite_if_exists"
-        )
-
-    def upsert(self, rows: List[CodeChunkModel]) -> None:
+    def upsert(self, rows: List[Any]) -> None:
         self.table.add(rows)
 
     def delete_by_file(self, rel_path: str) -> None:
