@@ -1,0 +1,12 @@
+# Local profile: HuggingFace embeddings and local LanceDB store.
+embedding:
+  provider: "huggingface"
+  model_name: "nomic-ai/CodeRankEmbed-v1"
+  trust_remote_code: true
+
+vector_store:
+  type: "lancedb"
+  path: ".locus_mcp/lancedb" # Store in local project dir for portability
+
+watcher:
+  enabled: true

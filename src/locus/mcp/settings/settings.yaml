@@ -1,0 +1,8 @@
+# Base settings for all profiles. Can be overridden by profile-specific files.
+mcp:
+  transport: "stdio"
+
+index:
+  chunking_strategy: "lines"
+  max_lines: 150
+  overlap: 25

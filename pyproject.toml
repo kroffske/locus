@@ -4,118 +4,43 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locus-analyzer"
-version = "0.3.0"
-authors = [
-    { name="Your Name", email="your@email.com" },
-]
-description = "A powerful code analysis tool that pinpoints and documents your project structure."
+version = "0.2.0"
+description = "Analyze project structure and optionally update files from Markdown."
 readme = "README.md"
 requires-python = ">=3.8"
+license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Development Status :: 4 - Beta",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development :: Build Tools",
 ]
-# Core dependencies
 dependencies = [
-    "rich>=13.0.0",
+    "rich",
+    "pyyaml", # For benchmark runner
 ]
 
 [project.optional-dependencies]
-# Optional dependencies for data file previews
-data = [
-    "pandas",
-    "pyarrow",
+# Define the 'mcp' extra that includes all heavy dependencies
+mcp = [
+    "sentence-transformers>=2.2.0",
+    "huggingface-hub>=0.17.0",
+    "torch",
+    "transformers",
+    "lancedb>=0.6.0",
+    "watchdog>=3.0.0",
+    "fastmcp>=0.2.0",
+    "pydantic",
+    "pydantic-settings",
 ]
 dev = [
-    "ruff>=0.4.0",
-    "black>=24.1.0",
-    "pyyaml>=6.0",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "locus-analyzer[mcp]", # Dev environment should include all extras
 ]
-
-[project.urls]
-"Homepage" = "https://github.com/your-username/locus-analyzer"
-"Bug Tracker" = "https://github.com/your-username/locus-analyzer/issues"
 
 [project.scripts]
-# This creates the `locus` command in the user's PATH
 locus = "locus.cli.main:main"
 
-
-
-[tool.ruff]
-# Set the maximum line length. 88 is the standard for Black. 99 is also common.
-line-length = 180
-
-# Assume Python 3.8+ for all checks.
-target-version = "py38"
-
-# Define where your main source code is. This helps Ruff's import resolver.
-src = ["src"]
-
-# Exclude common directories and files from linting and formatting.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-]
-
-[tool.ruff.lint]
-# Start with a curated set of sensible, widely-accepted rules.
-# E = pycodestyle Errors
-# W = pycodestyle Warnings
-# F = Pyflakes (catches bugs like unused imports/variables)
-# I = isort (import sorting)
-# UP = pyupgrade (helps modernize code to newer Python versions)
-select = ["E", "W", "F", "I", "UP"]
-
-# You can add more rules over time. For example, to add bug-detection:
-# extend-select = ["B"]  # flake8-bugbear
-
-# Ignore specific rules globally if you disagree with them.
-# (We are not ignoring anything globally for now, which is a good starting point).
-ignore = ["E701"]
-
-
-# --- THIS IS THE MOST IMPORTANT PART ---
-# Apply different rules to different files.
-[tool.ruff.lint.per-file-ignores]
-# In test files (`tests/` or `*_test.py`), it's okay to use `assert`.
-# It's also common to have unused function arguments (e.g., for fixtures).
-"tests/**/*.py" = ["S101", "F841"]
-"*_test.py" = ["S101", "F841"]
-
-# `__init__.py` files are often used to define a package's public API,
-# so unused imports (F401) are expected and should be ignored.
-"src/locus/__init__.py" = ["F401"]
-
-
-[tool.ruff.format]
-# You can add formatting-specific settings here if needed,
-# but the defaults are usually fine. For example:
-quote-style = "double"
-
-[tool.black]
-line-length = 180
-target-version = ["py38"]
-include = '(src|tests)/.*\.py$'
+[tool.setuptools.packages.find]
+where = ["src"]

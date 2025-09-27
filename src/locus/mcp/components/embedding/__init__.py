@@ -1,0 +1,1 @@
+"""Embedding component implementations."""

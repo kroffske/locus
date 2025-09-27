@@ -1,8 +1,8 @@
-# AI Agent Guidelines — locus
+# AI Agent Guidelines � locus
 
 **Goal:** Fast, reliable changes with tight quality gates.
 
-## 📋 Table of Contents
+## ?? Table of Contents
 
 | Section | Description |
 |---------|-------------|
@@ -77,7 +77,7 @@ Use these patterns when invoking subagents to save context and provide clear ins
 
 #### Planning Phase (with Sequential Thinking MCP)
 ```
-"Use Sequential Thinking MCP: Create detailed implementation plan for [feature]. Break down into: core functions → formatting → orchestration. Consider layer separation and return step-by-step plan."
+"Use Sequential Thinking MCP: Create detailed implementation plan for [feature]. Break down into: core functions > formatting > orchestration. Consider layer separation and return step-by-step plan."
 ```
 
 #### Implementation Phase (for focused tasks)
@@ -127,11 +127,11 @@ Use these patterns when invoking subagents to save context and provide clear ins
 
 <quick_checklist>
 ## Quick Checklist for a Contribution
-✅ **Core Logic**: Pure function? No global config? Explicit args?
-✅ **Error Handling**: Used specific exceptions correctly?
-✅ **Tests**: Added a new test for the change?
-✅ **Quality Gates**: Ran `ruff check --fix`, `ruff format`, `pytest`?
-✅ **Documentation**: Updated relevant docs and session log?
+? **Core Logic**: Pure function? No global config? Explicit args?
+? **Error Handling**: Used specific exceptions correctly?
+? **Tests**: Added a new test for the change?
+? **Quality Gates**: Ran `ruff check --fix`, `ruff format`, `pytest`?
+? **Documentation**: Updated relevant docs and session log?
 </quick_checklist>
 
 <core_principles>
@@ -155,27 +155,27 @@ Use these patterns when invoking subagents to save context and provide clear ins
     - *Why*: Errors don't propagate through system. Faster to find source of problem.
 
 ### Required Workflow: LLM-Driven Development Process
-**Analyze → Plan → Code → Test → Document → Quality Gates → Commit**
+**Analyze > Plan > Code > Test > Document > Quality Gates > Commit**
 
 #### Phase-by-Phase Guide
 
-1. **Analyze** – Carefully examine requirements. Gather context, clarify ambiguities.
+1. **Analyze** � Carefully examine requirements. Gather context, clarify ambiguities.
    - *LLM Instruction*: "Analyze the requirements before coding. List key tasks and questions first."
    - *Why*: Prevents hasty coding. Ensures problem understanding before implementation.
 
-2. **Plan** – Create step-by-step solution strategy before writing code.
+2. **Plan** � Create step-by-step solution strategy before writing code.
    - *LLM Instruction*: "Outline a detailed plan in bullet points. Do not write any code yet."
    - *Why*: Planning first significantly improves results on complex tasks. Guides focused implementation.
 
-3. **Code** – Implement according to approved plan. Write modular, incremental code.
+3. **Code** � Implement according to approved plan. Write modular, incremental code.
    - *LLM Instruction*: "Implement step X of the plan. Follow single-responsibility principle."
    - *Why*: Structured implementation reduces errors. Easier to review and debug.
 
-4. **Test** – Run automated tests. Fix failures before proceeding.
+4. **Test** � Run automated tests. Fix failures before proceeding.
    - *LLM Instruction*: "Run tests and fix any failures. Do not proceed until tests pass."
    - *Why*: Fail-fast philosophy. Catch issues early rather than accumulating technical debt.
 
-5. **Document** – Update docs, docstrings, README as needed.
+5. **Document** � Update docs, docstrings, README as needed.
    - *LLM Instruction*: "Update documentation to reflect these changes."
    - *Why*: Ensures implementation and usage are clearly recorded for future reference.
 </core_principles>
@@ -202,7 +202,7 @@ pytest -q
 # Read existing code, understand the codebase structure
 
 # 2. Plan the solution
-# Break down into: core functions → formatting → orchestration
+# Break down into: core functions > formatting > orchestration
 
 # 3. Code with layer separation
 # core/ - pure logic
@@ -226,13 +226,13 @@ git add . && git commit -m "feat: add new feature"
 ### Layer Separation Pattern
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Data Layer    │    │  Core Logic     │    │ Presentation    │
-│                 │    │                 │    │                 │
-│ • I/O Operations│────▶│ • Pure Logic    │────▶│ • Formatting    │
-│ • Validation    │    │ • Computations  │    │ • Error Display │
-│ • Error Convert │    │ • Fail Fast     │    │ • HTML/Reports  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+------------------�    ------------------�    ------------------�
+�   Data Layer    �    �  Core Logic     �    � Presentation    �
+�                 �    �                 �    �                 �
+� � I/O Operations�----?� � Pure Logic    �----?� � Formatting    �
+� � Validation    �    � � Computations  �    � � Error Display �
+� � Error Convert �    � � Fail Fast     �    � � HTML/Reports  �
+L------------------    L------------------    L------------------
 ```
 
 ### Boundary vs Logic (keep logic pure)
@@ -241,6 +241,7 @@ git add . && git commit -m "feat: add new feature"
 from pathlib import Path
 
 class ProcessingError(Exception): ...
+
 
 def load_text(path: Path) -> str:
     """Boundary function: Handles I/O and converts low-level errors."""
@@ -252,6 +253,7 @@ def load_text(path: Path) -> str:
 
 ```python
 import ast
+
 
 def analyze_content(text: str) -> dict:
     """Pure logic function: Assumes valid input, raises specific errors."""
@@ -268,13 +270,13 @@ def format_tree(files: list, show_comments: bool = False) -> str:
     """This function only needs a list of files and a boolean, not the whole config."""
     lines = []
     for f in files:
-        line = f"├─ {f.rel_path}"
+        line = f"+- {f.rel_path}"
         if show_comments and getattr(f, 'comment', None):
             line += f"  # {f.comment}"
         lines.append(line)
 
     if lines:
-        lines[-1] = lines[-1].replace("├", "└", 1)
+        lines[-1] = lines[-1].replace("+", "L", 1)
     return "\n".join(lines)
 ```
 </architecture_patterns>
@@ -289,7 +291,7 @@ def format_tree(files: list, show_comments: bool = False) -> str:
 
 ### Error Handling Examples
 
-**❌ BAD - Silent failures:**
+**? BAD - Silent failures:**
 ```python
 def compute_metrics(data):
     if data.empty:
@@ -297,7 +299,7 @@ def compute_metrics(data):
     # ... logic
 ```
 
-**✅ GOOD - Fail fast:**
+**? GOOD - Fail fast:**
 ```python
 def compute_metrics(data):
     if data.empty:
@@ -305,7 +307,7 @@ def compute_metrics(data):
     # ... logic
 ```
 
-**✅ GOOD - Centralized error handling:**
+**? GOOD - Centralized error handling:**
 ```python
 def add_section(self, title, builder_func):
     try:
@@ -328,6 +330,7 @@ def test_compute_metrics_raises_insufficient_data():
     with pytest.raises(InsufficientDataError, match="No data for metrics computation"):
         compute_metrics(empty_data)
 
+
 def test_compute_metrics_raises_validation_error():
     """Test that invalid data raises appropriate exception."""
     invalid_data = ["not", "valid", "format"]
@@ -342,14 +345,14 @@ def test_compute_metrics_raises_validation_error():
 
 ### Extract-Transform-Pass Pattern
 
-**❌ BAD: Hidden dependencies**
+**? BAD: Hidden dependencies**
 ```python
 def build_feature_section(cfg, ctx):
     # Function signature doesn't show what config fields are actually needed
     result = compute_feature_metrics(ctx.data, cfg)  # Hidden coupling
 ```
 
-**✅ GOOD: Explicit dependencies**
+**? GOOD: Explicit dependencies**
 ```python
 def build_feature_section(cfg, ctx):
     # Extract phase: Make dependencies explicit
@@ -405,14 +408,14 @@ def build_section_name(cfg, ctx):
 <anti_patterns>
 ## VI. Critical Anti-patterns & Common Mistakes
 
-### ❌ NEVER EVER: Dynamic Introspection
+### ? NEVER EVER: Dynamic Introspection
 ```python
 # NEVER: Using getattr for dynamic method calls - creates silent failures
 action = "delete"
 getattr(self, f"{action}_item")()  # Fails silently if method doesn't exist
 ```
 
-### ✅ Explicit Dispatch
+### ? Explicit Dispatch
 ```python
 # ALWAYS: Use explicit dispatch with clear error handling
 actions = {"delete": self.delete_item, "create": self.create_item}
@@ -422,7 +425,7 @@ else:
     raise ValueError(f"Unknown action: {action}")
 ```
 
-### ❌ CRITICAL: Broad Exception Handling
+### ? CRITICAL: Broad Exception Handling
 ```python
 # NEVER: Swallowing all exceptions hides critical bugs
 try:
@@ -432,7 +435,7 @@ except Exception as e:
     return None  # Silent failure
 ```
 
-### ✅ Targeted Exception Handling
+### ? Targeted Exception Handling
 ```python
 # ALWAYS: Catch only what you can handle, let others bubble up
 try:
@@ -442,7 +445,7 @@ except SpecificError as e:
     # Let other exceptions propagate for debugging
 ```
 
-### ❌ CRITICAL: Global State Dependencies
+### ? CRITICAL: Global State Dependencies
 ```python
 # NEVER: Hidden global dependencies break testability
 CONFIG = {"threshold": 5}
@@ -452,7 +455,7 @@ def check_value(x):
         ...
 ```
 
-### ✅ Explicit Dependencies
+### ? Explicit Dependencies
 ```python
 # ALWAYS: Make all dependencies visible in function signature
 def check_value(x, threshold=5):
@@ -460,9 +463,9 @@ def check_value(x, threshold=5):
         ...
 ```
 
-### 🎯 DECISION POINT: Simple Arguments vs Pydantic Models
+### ?? DECISION POINT: Simple Arguments vs Pydantic Models
 
-### ✅ Use Simple Arguments For:
+### ? Use Simple Arguments For:
 ```python
 # Data transformation, plotting, core logic, Jupyter-friendly functions
 def plot_distribution(values: list[float], bins: int = 20, title: str = "") -> Figure:
@@ -478,7 +481,7 @@ def transform_data(df: pd.DataFrame, normalize: bool = True, scale_factor: float
     pass
 ```
 
-### ✅ Use Pydantic Models For:
+### ? Use Pydantic Models For:
 ```python
 # Cross-module coordination, 5+ related params, validation-critical scenarios
 @dataclass
@@ -498,12 +501,12 @@ def process_pipeline(config: PipelineConfig) -> Results:
     pass
 ```
 
-### 🔍 Decision Guidelines:
+### ?? Decision Guidelines:
 - **Simple args**: Can you easily call this in a notebook? < 5 parameters? Core computation?
 - **Pydantic model**: Cross-module? Complex validation? 5+ related parameters?
 - **Consistency rule**: Within the same submodule, stick to one approach
 
-### ❌ Silent Failures
+### ? Silent Failures
 ```python
 # NEVER: Return None to signal errors - they get ignored
 def find_user(username) -> User:
@@ -513,7 +516,7 @@ def find_user(username) -> User:
     return user
 ```
 
-### ✅ Explicit Error Handling
+### ? Explicit Error Handling
 ```python
 # ALWAYS: Be explicit about error conditions
 def find_user_optional(username: str) -> Optional[User]:
@@ -556,16 +559,16 @@ Add project-specific modules here:
 
 ### Data Flow Pattern
 ```
-Configuration → Core Analysis → Formatting → Output Generation → Error Handling
-      ↓              ↓             ↓              ↓               ↓
+Configuration > Core Analysis > Formatting > Output Generation > Error Handling
+      v              v             v              v               v
 [Validation]   [Pure Logic]   [Styling]    [HTML/JSON]    [Graceful UX]
 ```
 
 <!-- <fill_project_data_flow>
 Customize this data flow for your project:
 ```
-Input → Validation → Processing → Analysis → Output
-  ↓        ↓           ↓           ↓        ↓
+Input > Validation > Processing > Analysis > Output
+  v        v           v           v        v
 [Clean]  [Verify]   [Transform]  [Compute] [Format]
 ```
 </fill_project_data_flow> -->
@@ -584,17 +587,17 @@ Add project-specific conventions here:
 <contribution_guide>
 ## VIII. Contribution & Logging
 
-*   Tests are mandatory → see **[TESTS.md](TESTS.md)**
-*   System design principles → see **[ARCHITECTURE.md](ARCHITECTURE.md)**
+*   Tests are mandatory > see **[TESTS.md](TESTS.md)**
+*   System design principles > see **[ARCHITECTURE.md](ARCHITECTURE.md)**
 *   Track live progress in **[TODO.md](TODO.md)** (gitignored)
 *   After completion, append notes to **[SESSION.md](SESSION.md)**
 *   **Debugging Hint**: Check **[SESSION.md](SESSION.md)** for similar issues fixed previously
 
 <!-- <fill_project_documentation>
 Add project-specific documentation references:
-*   Domain guide → see **[DOMAIN.md](DOMAIN.md)**
-*   API documentation → see **[API.md](API.md)**
-*   Deployment guide → see **[DEPLOY.md](DEPLOY.md)**
+*   Domain guide > see **[DOMAIN.md](DOMAIN.md)**
+*   API documentation > see **[API.md](API.md)**
+*   Deployment guide > see **[DEPLOY.md](DEPLOY.md)**
 </fill_project_documentation> -->
 
 ### Design Decision Framework
