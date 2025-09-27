@@ -1,4 +1,4 @@
-# AI Agent Guidelines — {{project_name}}
+# AI Agent Guidelines - {project_name}
 
 **Goal:** Fast, reliable changes with tight quality gates.
 
@@ -159,23 +159,23 @@ Use these patterns when invoking subagents to save context and provide clear ins
 
 #### Phase-by-Phase Guide
 
-1. **Analyze** – Carefully examine requirements. Gather context, clarify ambiguities.
+1. **Analyze** - Carefully examine requirements. Gather context, clarify ambiguities.
    - *LLM Instruction*: "Analyze the requirements before coding. List key tasks and questions first."
    - *Why*: Prevents hasty coding. Ensures problem understanding before implementation.
 
-2. **Plan** – Create step-by-step solution strategy before writing code.
+2. **Plan** - Create step-by-step solution strategy before writing code.
    - *LLM Instruction*: "Outline a detailed plan in bullet points. Do not write any code yet."
    - *Why*: Planning first significantly improves results on complex tasks. Guides focused implementation.
 
-3. **Code** – Implement according to approved plan. Write modular, incremental code.
+3. **Code** - Implement according to approved plan. Write modular, incremental code.
    - *LLM Instruction*: "Implement step X of the plan. Follow single-responsibility principle."
    - *Why*: Structured implementation reduces errors. Easier to review and debug.
 
-4. **Test** – Run automated tests. Fix failures before proceeding.
+4. **Test** - Run automated tests. Fix failures before proceeding.
    - *LLM Instruction*: "Run tests and fix any failures. Do not proceed until tests pass."
    - *Why*: Fail-fast philosophy. Catch issues early rather than accumulating technical debt.
 
-5. **Document** – Update docs, docstrings, README as needed.
+5. **Document** - Update docs, docstrings, README as needed.
    - *LLM Instruction*: "Update documentation to reflect these changes."
    - *Why*: Ensures implementation and usage are clearly recorded for future reference.
 </core_principles>
@@ -226,12 +226,12 @@ git add . && git commit -m "feat: add new feature"
 ### Layer Separation Pattern
 
 ```
-------------------¬    ------------------¬    ------------------¬
-¦   Data Layer    ¦    ¦  Core Logic     ¦    ¦ Presentation    ¦
-¦                 ¦    ¦                 ¦    ¦                 ¦
-¦ • I/O Operations¦----?¦ • Pure Logic    ¦----?¦ • Formatting    ¦
-¦ • Validation    ¦    ¦ • Computations  ¦    ¦ • Error Display ¦
-¦ • Error Convert ¦    ¦ • Fail Fast     ¦    ¦ • HTML/Reports  ¦
+------------------     ------------------     ------------------
+|   Data Layer    |    |  Core Logic     |    | Presentation    |
+|                 |    |                 |    |                 |
+| - I/O Operations|----?| - Pure Logic    |----?| - Formatting    |
+| - Validation    |    | - Computations  |    | - Error Display |
+| - Error Convert |    | - Fail Fast     |    | - HTML/Reports  |
 L------------------    L------------------    L------------------
 ```
 
@@ -248,7 +248,7 @@ def load_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except (FileNotFoundError, UnicodeDecodeError) as e:
-        raise ProcessingError(f"Error loading {path}: {e}") from e
+        raise ProcessingError(f"Error loading {{path}}: {{e}}") from e
 ```
 
 ```python
@@ -260,7 +260,7 @@ def analyze_content(text: str) -> dict:
     tree = ast.parse(text)  # May raise SyntaxError, which is expected to be handled upstream.
     funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
     classes = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
-    return {"functions": funcs, "classes": classes}
+    return {{"functions": funcs, "classes": classes}}
 ```
 
 ### Small Interface (pass only what's needed)
@@ -270,9 +270,9 @@ def format_tree(files: list, show_comments: bool = False) -> str:
     """This function only needs a list of files and a boolean, not the whole config."""
     lines = []
     for f in files:
-        line = f"+- {f.rel_path}"
+        line = f"+- {{f.rel_path}}"
         if show_comments and getattr(f, 'comment', None):
-            line += f"  # {f.comment}"
+            line += f"  # {{f.comment}}"
         lines.append(line)
 
     if lines:
@@ -314,10 +314,10 @@ def add_section(self, title, builder_func):
         section_data = builder_func()
         self._add_section_html(title, section_data)
     except InsufficientDataError as e:
-        logger.info(f"Skipping section '{title}': {e}")  # Expected situation
+        logger.info(f"Skipping section '{{title}}': {{e}}")  # Expected situation
         self._add_placeholder(title, "Insufficient data")
     except (DataValidationError, ProcessingError) as e:
-        logger.warning(f"Data issue in section '{title}': {e}")  # Config problem
+        logger.warning(f"Data issue in section '{{title}}': {{e}}")  # Config problem
         self._add_placeholder(title, "Data error")
 ```
 
@@ -412,17 +412,17 @@ def build_section_name(cfg, ctx):
 ```python
 # NEVER: Using getattr for dynamic method calls - creates silent failures
 action = "delete"
-getattr(self, f"{action}_item")()  # Fails silently if method doesn't exist
+getattr(self, f"{{action}}_item")()  # Fails silently if method doesn't exist
 ```
 
 ### ? Explicit Dispatch
 ```python
 # ALWAYS: Use explicit dispatch with clear error handling
-actions = {"delete": self.delete_item, "create": self.create_item}
+actions = {{"delete": self.delete_item, "create": self.create_item}}
 if action in actions:
     actions[action]()
 else:
-    raise ValueError(f"Unknown action: {action}")
+    raise ValueError(f"Unknown action: {{action}}")
 ```
 
 ### ? CRITICAL: Broad Exception Handling
@@ -448,7 +448,7 @@ except SpecificError as e:
 ### ? CRITICAL: Global State Dependencies
 ```python
 # NEVER: Hidden global dependencies break testability
-CONFIG = {"threshold": 5}
+CONFIG = {{"threshold": 5}}
 
 def check_value(x):
     if x > CONFIG["threshold"]:  # Hidden dependency
@@ -527,7 +527,7 @@ def find_user_required(username: str) -> User:
     """Raises exception if not found - use when user must exist"""
     user = db.lookup(username)
     if user is None:
-        raise UserNotFoundError(f"User '{username}' not found")
+        raise UserNotFoundError(f"User '{{username}}' not found")
     return user
 ```
 </anti_patterns>
@@ -545,16 +545,16 @@ Describe your project's main workflow here. For example:
 </fill_project_specific_workflow> -->
 
 ### Module Mapping
-*   **Core Logic**: `src/{{project_name}}/core/`
-*   **Processing**: `src/{{project_name}}/processing/`
-*   **Output Generation**: `src/{{project_name}}/formatting/`
-*   **Data Models**: `src/{{project_name}}/models.py`
+*   **Core Logic**: `src/{project_name}/core/`
+*   **Processing**: `src/{project_name}/processing/`
+*   **Output Generation**: `src/{project_name}/formatting/`
+*   **Data Models**: `src/{project_name}/models.py`
 
 <!-- <fill_additional_modules>
 Add project-specific modules here:
-*   **Custom Module**: `src/{{project_name}}/custom/`
-*   **Integration Layer**: `src/{{project_name}}/integrations/`
-*   **Utils**: `src/{{project_name}}/utils/`
+*   **Custom Module**: `src/{project_name}/custom/`
+*   **Integration Layer**: `src/{project_name}/integrations/`
+*   **Utils**: `src/{project_name}/utils/`
 </fill_additional_modules> -->
 
 ### Data Flow Pattern
