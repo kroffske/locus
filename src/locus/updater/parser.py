@@ -6,6 +6,56 @@ from .models import UpdateOperation
 
 logger = logging.getLogger(__name__)
 
+
+def _sanitize_markdown_backticks(content: str) -> str:
+    """Sanitize markdown content to handle edge cases with backticks.
+
+    Handles:
+    1. Consecutive backticks (``````): when two code blocks are adjacent
+    2. Unmatched closing backticks: stray ``` that break parsing
+    """
+    # First, handle consecutive backticks by adding whitespace between them
+    # Replace 6+ consecutive backticks with properly spaced ones
+    content = re.sub(r"```(\s*```)", r"```\n\n\1", content)
+
+    # Parse code blocks more carefully to handle unmatched blocks
+    lines = content.split("\n")
+    sanitized_lines = []
+    in_code_block = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Check if this is a code block delimiter
+        if stripped.startswith("```"):
+            if stripped == "```":
+                # This is a closing backtick
+                if in_code_block:
+                    # Valid closing - keep it
+                    sanitized_lines.append(line)
+                    in_code_block = False
+                else:
+                    # Unmatched closing - remove it
+                    logger.debug(f"Removing unmatched closing backticks: {line}")
+                    continue
+            else:
+                # This is an opening backtick with language
+                if in_code_block:
+                    # We're already in a code block, close the previous one first
+                    sanitized_lines.append("```")
+                sanitized_lines.append(line)
+                in_code_block = True
+        else:
+            # Regular line - keep it
+            sanitized_lines.append(line)
+
+    # If we end with an unclosed code block, close it
+    if in_code_block:
+        sanitized_lines.append("```")
+
+    return "\n".join(sanitized_lines)
+
+
 # Regex to find code blocks where the first line contains the file path
 # Format: ```python
 #         # source: path/to/file.py
@@ -23,8 +73,11 @@ def parse_markdown_to_updates(markdown_content: str) -> List[UpdateOperation]:
     """Parses a Markdown string to find code blocks where the first line
     contains the file path in the format: # source: path/to/file.py
     """
+    # Sanitize input to handle backtick edge cases
+    sanitized_content = _sanitize_markdown_backticks(markdown_content)
+
     operations: List[UpdateOperation] = []
-    matches = CODE_BLOCK_REGEX.finditer(markdown_content)
+    matches = CODE_BLOCK_REGEX.finditer(sanitized_content)
 
     for match in matches:
         content = match.group(1)
@@ -68,6 +121,8 @@ def parse_markdown_to_updates(markdown_content: str) -> List[UpdateOperation]:
         logger.debug(f"Parsed update operation for file: {target_path}")
 
     if not operations:
-        logger.warning("No file blocks matching the expected format were found in the input.")
+        logger.warning(
+            "No file blocks matching the expected format were found in the input."
+        )
 
     return operations
