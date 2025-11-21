@@ -37,7 +37,9 @@ DEFAULT_IGNORE_PATTERNS = {
 }
 
 
-def setup_logging(level: str = "INFO", log_format: str = "%(message)s", log_file: Optional[str] = None):
+def setup_logging(
+    level: str = "INFO", log_format: str = "%(message)s", log_file: Optional[str] = None
+):
     """Configures logging for the application."""
     log_level_int = getattr(logging, level.upper(), logging.INFO)
 
@@ -80,7 +82,9 @@ def get_module_name(relative_path: str) -> Optional[str]:
     return module_path.replace(os.sep, ".")
 
 
-def is_path_ignored(relative_path: str, project_root: Optional[str], ignore_patterns: Set[str]) -> bool:
+def is_path_ignored(
+    relative_path: str, project_root: Optional[str], ignore_patterns: Set[str]
+) -> bool:
     """Checks if a path should be ignored based on default and custom rules."""
     path_parts = set(relative_path.replace("\\", "/").split("/"))
 
@@ -95,7 +99,9 @@ def is_path_ignored(relative_path: str, project_root: Optional[str], ignore_patt
     for pattern in ignore_patterns:
         # Glob patterns
         if any(ch in pattern for ch in "*?["):
-            if fnmatch.fnmatch(norm_rel_path, pattern) or fnmatch.fnmatch(basename, pattern):
+            if fnmatch.fnmatch(norm_rel_path, pattern) or fnmatch.fnmatch(
+                basename, pattern
+            ):
                 return True
             continue
         # Directory-style patterns (with or without trailing slash)

@@ -65,7 +65,9 @@ def _find_config_root(start_path: str) -> str:
             os.path.join(cur, ".locusallow"),
             os.path.join(cur, ".locusignore"),
         ]
-        if any(os.path.exists(p) for p in candidates) or os.path.isdir(os.path.join(cur, ".git")):
+        if any(os.path.exists(p) for p in candidates) or os.path.isdir(
+            os.path.join(cur, ".git")
+        ):
             return cur
         if cur == root:
             break
@@ -95,14 +97,22 @@ def analyze(
     # Load README from config root
     result.project_readme_content = find_and_read_readme(config_root)
     if not allow_patterns:
-        allow_patterns = {"**/*.py", "**/*.md", "**/README*"}  # Default if no allow patterns found
+        allow_patterns = {
+            "**/*.py",
+            "**/*.md",
+            "**/README*",
+        }  # Default if no allow patterns found
         logger.info(f"No allow patterns found, defaulting to: {allow_patterns}")
 
     # 2. Scan Directory and apply ignore/allow patterns
     try:
-        scanned_files = scanner.scan_directory(project_path, ignore_patterns, allow_patterns)
+        scanned_files = scanner.scan_directory(
+            project_path, ignore_patterns, allow_patterns
+        )
         if not scanned_files:
-            result.errors.append("Initial scan found no files matching the allow patterns.")
+            result.errors.append(
+                "Initial scan found no files matching the allow patterns."
+            )
             return result
     except OSError as e:
         result.errors.append(f"Failed to scan directory {project_path}: {e}")
@@ -112,7 +122,9 @@ def analyze(
     all_file_infos: Dict[str, FileInfo] = {}  # abs_path -> FileInfo
     for abs_path in scanned_files:
         rel_path = helpers.get_relative_path(abs_path, project_path)
-        module_name = helpers.get_module_name(rel_path) if rel_path.endswith(".py") else None
+        module_name = (
+            helpers.get_module_name(rel_path) if rel_path.endswith(".py") else None
+        )
         all_file_infos[abs_path] = FileInfo(
             absolute_path=abs_path,
             relative_path=rel_path,
@@ -121,7 +133,9 @@ def analyze(
             is_init=os.path.basename(rel_path) == "__init__.py",
         )
     result.file_tree = helpers.build_file_tree(list(all_file_infos.values()))
-    module_to_file_map = {fi.module_name: path for path, fi in all_file_infos.items() if fi.module_name}
+    module_to_file_map = {
+        fi.module_name: path for path, fi in all_file_infos.items() if fi.module_name
+    }
 
     # 4. Determine Initial Targets
     initial_targets_abs: Set[str] = set()
@@ -129,13 +143,19 @@ def analyze(
         # Resolve the spec path relative to the config root (repo root) when relative,
         # otherwise keep absolute as-is. This prevents duplicating segments like src/src.
         base = result.config_root_path or project_path
-        abs_target_path = os.path.abspath(spec.path) if os.path.isabs(spec.path) else os.path.abspath(os.path.join(base, spec.path))
+        abs_target_path = (
+            os.path.abspath(spec.path)
+            if os.path.isabs(spec.path)
+            else os.path.abspath(os.path.join(base, spec.path))
+        )
         if os.path.isdir(abs_target_path):
             # If the target directory is the project_path itself, include everything scanned
             try:
                 same_root = os.path.samefile(abs_target_path, project_path)
             except Exception:
-                same_root = abs_target_path.rstrip(os.sep) == project_path.rstrip(os.sep)
+                same_root = abs_target_path.rstrip(os.sep) == project_path.rstrip(
+                    os.sep
+                )
             if same_root:
                 initial_targets_abs.update(scanned_files)
             else:
@@ -146,11 +166,15 @@ def analyze(
             if abs_target_path in all_file_infos:
                 initial_targets_abs.add(abs_target_path)
             else:
-                result.errors.append(f"Target file '{spec.path}' was specified but is ignored by config.")
+                result.errors.append(
+                    f"Target file '{spec.path}' was specified but is ignored by config."
+                )
 
     if not initial_targets_abs:
         if any(s.path != "." for s in target_specs):
-            result.errors.append("No specified targets were found after applying ignore/allow rules.")
+            result.errors.append(
+                "No specified targets were found after applying ignore/allow rules."
+            )
         else:  # Default mode, analyze all
             initial_targets_abs.update(scanned_files)
 
@@ -160,7 +184,11 @@ def analyze(
         if not spec.line_ranges:
             continue
         base = result.config_root_path or project_path
-        abs_target_path = os.path.abspath(spec.path) if os.path.isabs(spec.path) else os.path.abspath(os.path.join(base, spec.path))
+        abs_target_path = (
+            os.path.abspath(spec.path)
+            if os.path.isabs(spec.path)
+            else os.path.abspath(os.path.join(base, spec.path))
+        )
         if os.path.isfile(abs_target_path):
             existing = selected_ranges_map.get(abs_target_path, [])
             existing.extend(spec.line_ranges)

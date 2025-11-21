@@ -31,7 +31,9 @@ class CodeSearchEngine:
 
         return self._normalize(semantic_hits)
 
-    def _merge(self, semantic_hits: List[Dict], keyword_hits: List[Dict], k: int) -> List[Dict]:
+    def _merge(
+        self, semantic_hits: List[Dict], keyword_hits: List[Dict], k: int
+    ) -> List[Dict]:
         """Merges and de-duplicates semantic and keyword search results."""
         seen_ids = set()
         merged = []

@@ -45,11 +45,21 @@ class _HashSimilarityStrategy(SimilarityStrategy):
         for _, ids in self.map.items():
             if len(ids) <= 1:
                 continue
-            clusters.append(Cluster(id=cid, member_ids=list(ids), strategy=self.name, score_min=1.0, score_max=1.0))
+            clusters.append(
+                Cluster(
+                    id=cid,
+                    member_ids=list(ids),
+                    strategy=self.name,
+                    score_min=1.0,
+                    score_max=1.0,
+                )
+            )
             # Generate pairwise matches (score 1.0)
             for i in range(len(ids)):
                 for j in range(i + 1, len(ids)):
-                    matches.append(Match(a_id=ids[i], b_id=ids[j], score=1.0, strategy=self.name))
+                    matches.append(
+                        Match(a_id=ids[i], b_id=ids[j], score=1.0, strategy=self.name)
+                    )
             cid += 1
         return clusters, matches
 

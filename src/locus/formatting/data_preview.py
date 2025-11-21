@@ -32,11 +32,23 @@ def preview_data_file(file_path: str) -> str:
 
     try:
         if ext == ".csv":
-            return header + (_preview_csv_pandas(file_path) if PANDAS_AVAILABLE else _preview_csv_basic(file_path))
+            return header + (
+                _preview_csv_pandas(file_path)
+                if PANDAS_AVAILABLE
+                else _preview_csv_basic(file_path)
+            )
         if ext == ".tsv":
-            return header + (_preview_csv_pandas(file_path, "\t") if PANDAS_AVAILABLE else _preview_csv_basic(file_path, "\t"))
+            return header + (
+                _preview_csv_pandas(file_path, "\t")
+                if PANDAS_AVAILABLE
+                else _preview_csv_basic(file_path, "\t")
+            )
         if ext == ".parquet":
-            return header + (_preview_parquet(file_path) if PYARROW_AVAILABLE else "Preview requires `pyarrow`.")
+            return header + (
+                _preview_parquet(file_path)
+                if PYARROW_AVAILABLE
+                else "Preview requires `pyarrow`."
+            )
         if ext == ".json":
             return header + _preview_json(file_path)
     except Exception as e:
@@ -47,7 +59,9 @@ def preview_data_file(file_path: str) -> str:
 
 def _preview_csv_pandas(file_path: str, delimiter=",") -> str:
     df = pd.read_csv(file_path, delimiter=delimiter, nrows=5)
-    info = f"- **Columns:** {df.shape[1]}\n- **Column Names:** `{', '.join(df.columns)}`"
+    info = (
+        f"- **Columns:** {df.shape[1]}\n- **Column Names:** `{', '.join(df.columns)}`"
+    )
     return f"{info}\n\n### First 5 Rows\n\n{df.to_markdown(index=False)}"
 
 
@@ -61,8 +75,15 @@ def _preview_csv_basic(file_path: str, delimiter=",") -> str:
 def _preview_parquet(file_path: str) -> str:
     p_file = pq.ParquetFile(file_path)
     schema = p_file.schema
-    info = [f"- **Rows:** {p_file.metadata.num_rows}", f"- **Columns:** {len(schema)}", "### Schema", "```"]
-    info.extend([f"- {name}: {dtype}" for name, dtype in zip(schema.names, schema.types)])
+    info = [
+        f"- **Rows:** {p_file.metadata.num_rows}",
+        f"- **Columns:** {len(schema)}",
+        "### Schema",
+        "```",
+    ]
+    info.extend(
+        [f"- {name}: {dtype}" for name, dtype in zip(schema.names, schema.types)]
+    )
     info.append("```")
     return "\n".join(info)
 

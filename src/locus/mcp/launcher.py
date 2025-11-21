@@ -1,4 +1,5 @@
 """Main entry point for the Locus MCP server."""
+
 import argparse
 import logging
 import sys
@@ -43,7 +44,10 @@ def main():
 
     serve_parser = subparsers.add_parser("serve", help="Run the MCP server")
     serve_parser.add_argument(
-        "--transport", choices=["stdio", "http"], default="stdio", help="Server transport"
+        "--transport",
+        choices=["stdio", "http"],
+        default="stdio",
+        help="Server transport",
     )
 
     index_parser = subparsers.add_parser("index", help="Index a codebase")

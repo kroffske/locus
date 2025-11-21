@@ -56,7 +56,9 @@ def prompt_user_for_overwrite(existing_files: Set[str]) -> bool:
         return True
 
     file_list = ", ".join(sorted(existing_files))
-    print_warning(f"The following template files already exist: {file_list}")  # Use print_warning
+    print_warning(
+        f"The following template files already exist: {file_list}"
+    )  # Use print_warning
 
     try:
         # Use colors.confirm for consistent UX
@@ -257,7 +259,9 @@ def init_project(
 
     # Create the files
     try:
-        created_files = create_template_files(target_dir, template_files, substitutions, files_to_create)
+        created_files = create_template_files(
+            target_dir, template_files, substitutions, files_to_create
+        )
 
         # Try to create CLAUDE.md symlink after AGENTS.md is created
         if "AGENTS.md" in created_files or (target_dir / "AGENTS.md").exists():

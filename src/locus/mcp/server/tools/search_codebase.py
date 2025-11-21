@@ -15,7 +15,9 @@ def search_codebase(
     try:
         from mcp import TextContent
     except ImportError:
-        raise ImportError("MCP types not found. Please install with: pip install 'locus-analyzer[mcp]'")
+        raise ImportError(
+            "MCP types not found. Please install with: pip install 'locus-analyzer[mcp]'"
+        )
 
     container = get_container()
     engine = container.code_search_engine()

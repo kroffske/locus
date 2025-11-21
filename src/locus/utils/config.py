@@ -145,7 +145,14 @@ def create_default_config_if_needed(project_path: str) -> None:
     legacy_ignore = project_root / ".locusignore"
 
     # Only create if no config exists at all
-    if not any([locus_allow.exists(), locus_ignore.exists(), legacy_allow.exists(), legacy_ignore.exists()]):
+    if not any(
+        [
+            locus_allow.exists(),
+            locus_ignore.exists(),
+            legacy_allow.exists(),
+            legacy_ignore.exists(),
+        ]
+    ):
         try:
             # Create .locus directory
             locus_dir.mkdir(exist_ok=True)
@@ -154,7 +161,9 @@ def create_default_config_if_needed(project_path: str) -> None:
             locus_allow.write_text(DEFAULT_LOCUSALLOW, encoding="utf-8")
             locus_ignore.write_text(DEFAULT_LOCUSIGNORE, encoding="utf-8")
 
-            logger.info(f"Created .locus directory with default config files at {locus_dir}")
+            logger.info(
+                f"Created .locus directory with default config files at {locus_dir}"
+            )
         except OSError as e:
             logger.warning(f"Could not create .locus config directory: {e}")
 

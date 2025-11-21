@@ -54,7 +54,9 @@ def _load_template_file(template_file: str) -> str:
         raise
 
 
-def get_template_content(template_name: str, substitutions: Dict[str, str] = None) -> str:
+def get_template_content(
+    template_name: str, substitutions: Dict[str, str] = None
+) -> str:
     """Get template content with optional substitutions.
 
     Args:
@@ -70,7 +72,9 @@ def get_template_content(template_name: str, substitutions: Dict[str, str] = Non
         UnicodeDecodeError: If template file can't be decoded
     """
     if template_name not in TEMPLATE_FILES:
-        raise ValueError(f"Unknown template: {template_name}. Available: {list(TEMPLATE_FILES.keys())}")
+        raise ValueError(
+            f"Unknown template: {template_name}. Available: {list(TEMPLATE_FILES.keys())}"
+        )
 
     template_file = TEMPLATE_FILES[template_name]
     content = _load_template_file(template_file)

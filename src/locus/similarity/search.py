@@ -33,7 +33,9 @@ def _filter_units(units: List["CodeUnit"], include_init: bool) -> List["CodeUnit
     return filtered
 
 
-def run(result: AnalysisResult, config: Optional[SimilarityConfig] = None) -> SimilarityResult:
+def run(
+    result: AnalysisResult, config: Optional[SimilarityConfig] = None
+) -> SimilarityResult:
     cfg = config or SimilarityConfig()
     units = extract_code_units(result)
     units = _filter_units(units, include_init=cfg.include_init)
@@ -44,4 +46,6 @@ def run(result: AnalysisResult, config: Optional[SimilarityConfig] = None) -> Si
         strat = ExactHashStrategy()
     strat.prepare(units)
     clusters, matches = strat.find_clusters(units)
-    return SimilarityResult(units=units, clusters=clusters, matches=matches, meta={"strategy": strat.name})
+    return SimilarityResult(
+        units=units, clusters=clusters, matches=matches, meta={"strategy": strat.name}
+    )

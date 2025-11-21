@@ -25,22 +25,30 @@ def generate_full_report(
 ) -> str:
     """Generates a single, comprehensive Markdown report file."""
     parts = ["# Code Analysis Report"]
-    parts.append(f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    parts.append(
+        f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    )
 
     # Add LLM instructions for code modifications
     parts.append("## Instructions for LLM Code Modifications\n")
-    parts.append("When providing code changes or new files, use the following format for each file:")
+    parts.append(
+        "When providing code changes or new files, use the following format for each file:"
+    )
     parts.append("```")
     parts.append("```python")
     parts.append("# source: path/to/file.py")
     parts.append("# Complete code content here - do not skip any lines")
     parts.append("```")
     parts.append("```")
-    parts.append("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n")
+    parts.append(
+        "**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n"
+    )
 
     # Add README and other root docs if requested
     if include_readme and result.project_readme_content:
-        parts.extend(["## Project Documentation\n", result.project_readme_content, "\n---\n"])
+        parts.extend(
+            ["## Project Documentation\n", result.project_readme_content, "\n---\n"]
+        )
     if include_readme and include_root_docs:
         root_for_docs = result.config_root_path or result.project_path
         other_docs = _load_root_markdown_docs(root_for_docs)
@@ -48,7 +56,9 @@ def generate_full_report(
             parts.extend([f"## {name}", content, "\n---\n"])
 
     if result.errors:
-        parts.extend(["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"])
+        parts.extend(
+            ["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"]
+        )
 
     if include_tree and result.file_tree:
         tree_md = tree.format_tree_markdown(
@@ -70,23 +80,40 @@ def generate_full_report(
     sim = getattr(result, "similarity", None)
     if sim and getattr(sim, "clusters", None):
         parts.append("## Similar or Duplicate Functions\n")
-        parts.append("The following clusters contain functions with identical normalized text (exact strategy).\n")
+        parts.append(
+            "The following clusters contain functions with identical normalized text (exact strategy).\n"
+        )
         for cluster in sim.clusters:
             # Show cluster header
             members = [u for u in sim.units if u.id in set(cluster.member_ids)]
             if not members:
                 continue
-            parts.append(f"### Cluster {cluster.id} · size {len(members)} · strategy `{cluster.strategy}`")
+            parts.append(
+                f"### Cluster {cluster.id} · size {len(members)} · strategy `{cluster.strategy}`"
+            )
             for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
-                parts.append(f"- `{u.rel_path}:{u.span[0]}-{u.span[1]}` · `{u.qualname}`")
+                parts.append(
+                    f"- `{u.rel_path}:{u.span[0]}-{u.span[1]}` · `{u.qualname}`"
+                )
             parts.append("")
         parts.append("\n---\n")
 
     if include_headers:
-        parts.extend(["## Top-of-file Comments", code.format_top_comments_collection(result), "\n---\n"])
+        parts.extend(
+            [
+                "## Top-of-file Comments",
+                code.format_top_comments_collection(result),
+                "\n---\n",
+            ]
+        )
 
     if include_code and result.required_files:
-        parts.extend(["## File Contents", code.format_code_collection(result, full_code_re, annotation_re)])
+        parts.extend(
+            [
+                "## File Contents",
+                code.format_code_collection(result, full_code_re, annotation_re),
+            ]
+        )
 
     return "\n".join(parts)
 
@@ -98,16 +125,24 @@ def generate_headers_report(
 ) -> str:
     """Generates a report with project tree and only top-of-file comments/docstrings."""
     parts = ["# Code Analysis Report (Headers)"]
-    parts.append(f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    parts.append(
+        f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    )
 
     if include_readme and result.project_readme_content:
-        parts.extend(["## Project Documentation\n", result.project_readme_content, "\n---\n"])
+        parts.extend(
+            ["## Project Documentation\n", result.project_readme_content, "\n---\n"]
+        )
 
     if result.errors:
-        parts.extend(["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"])
+        parts.extend(
+            ["## Errors Encountered", *[f"- `{e}`" for e in result.errors], "\n---\n"]
+        )
 
     if result.file_tree:
-        tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, include_comments_in_tree)
+        tree_md = tree.format_tree_markdown(
+            result.file_tree, result.required_files, include_comments_in_tree
+        )
         parts.extend(["## Project Structure", f"```\n{tree_md}\n```\n", "\n---\n"])
 
     parts.append("## Top-of-file Comments")
@@ -140,7 +175,9 @@ def _load_root_markdown_docs(project_path: str):
     return docs
 
 
-def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: str, include_comments: bool):
+def generate_summary_readme(
+    result: AnalysisResult, output_dir: str, filename: str, include_comments: bool
+):
     """Generates a claude.md-style summary file."""
     readme_path = os.path.join(output_dir, filename)
     logger.info(f"Generating summary file: {readme_path}")
@@ -151,18 +188,24 @@ def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: s
                 f.write(f"{result.project_readme_content}\n\n---\n\n")
 
             f.write("## Instructions for LLM Code Modifications\n\n")
-            f.write("When providing code changes or new files, use the following format for each file:\n")
+            f.write(
+                "When providing code changes or new files, use the following format for each file:\n"
+            )
             f.write("```\n")
             f.write("```python\n")
             f.write("# source: path/to/file.py\n")
             f.write("# Complete code content here - do not skip any lines\n")
             f.write("```\n")
             f.write("```\n")
-            f.write("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n\n")
+            f.write(
+                "**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n\n"
+            )
 
             f.write("## Project File Structure\n\n")
             if result.file_tree:
-                tree_md = tree.format_tree_markdown(result.file_tree, result.required_files, include_comments)
+                tree_md = tree.format_tree_markdown(
+                    result.file_tree, result.required_files, include_comments
+                )
                 f.write(f"```\n{tree_md}\n```\n")
             else:
                 f.write("(No file tree generated.)\n")
@@ -172,7 +215,9 @@ def generate_summary_readme(result: AnalysisResult, output_dir: str, filename: s
         raise
 
 
-def generate_annotations_report_file(result: AnalysisResult, output_dir: str, filename: str, include_comments: bool):
+def generate_annotations_report_file(
+    result: AnalysisResult, output_dir: str, filename: str, include_comments: bool
+):
     """Generates a dedicated OUT.md file with annotations."""
     report_path = os.path.join(output_dir, filename)
     logger.info(f"Generating annotations report: {report_path}")
@@ -189,22 +234,35 @@ def generate_annotations_report_file(result: AnalysisResult, output_dir: str, fi
 
 def generate_annotations_report_str(result: AnalysisResult) -> str:
     """Generates the annotations section as a string."""
-    annotated = [fa for fa in result.required_files.values() if fa.annotations and (fa.annotations.module_docstring or fa.annotations.elements)]
+    annotated = [
+        fa
+        for fa in result.required_files.values()
+        if fa.annotations
+        and (fa.annotations.module_docstring or fa.annotations.elements)
+    ]
     if not annotated:
         return "## Detailed Annotations\n\nNo detailed annotations were extracted."
 
     parts = ["## Detailed Annotations"]
-    parts.append("\nThe following shows the structure and documentation of all analyzed Python files.")
-    parts.append("Each file contains function and class signatures with their docstrings, without implementation details.\n")
+    parts.append(
+        "\nThe following shows the structure and documentation of all analyzed Python files."
+    )
+    parts.append(
+        "Each file contains function and class signatures with their docstrings, without implementation details.\n"
+    )
     parts.append("### Instructions for LLM Code Modifications\n")
-    parts.append("When providing code changes or new files based on these annotations, use the following format:")
+    parts.append(
+        "When providing code changes or new files based on these annotations, use the following format:"
+    )
     parts.append("```")
     parts.append("```python")
     parts.append("# source: path/to/file.py")
     parts.append("# Complete code content here - do not skip any lines")
     parts.append("```")
     parts.append("```")
-    parts.append("**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n")
+    parts.append(
+        "**Important:** Include complete file contents without omissions. Do not use ellipsis (...) or skip any lines, even if previously shown.\n"
+    )
     parts.append("```python")
 
     for analysis in sorted(annotated, key=lambda fa: fa.file_info.relative_path):
@@ -279,7 +337,9 @@ def _format_single_annotation_as_stub(annotations: AnnotationInfo) -> str:
             methods = details.get("methods", {})
             if methods:
                 for method_name, method_details in sorted(methods.items()):
-                    method_sig = method_details.get("signature", f"def {method_name}(...)")
+                    method_sig = method_details.get(
+                        "signature", f"def {method_name}(...)"
+                    )
                     lines.append(f"    {method_sig}")
                     if method_details.get("docstring"):
                         lines.append(f'        """{method_details["docstring"]}"""')
