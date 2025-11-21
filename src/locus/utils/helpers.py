@@ -13,6 +13,7 @@ ALWAYS_IGNORE_DIRS = {
     ".git",
     ".hg",
     ".svn",
+    ".bzr",
     ".venv",
     "venv",
     "env",
@@ -24,6 +25,22 @@ ALWAYS_IGNORE_DIRS = {
     "target",
     ".idea",
     ".vscode",
+    # Output directories
+    "out",
+    "output",
+    "outputs",
+    # Cache directories
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".hypothesis",
+    # Temporary directories
+    "tmp",
+    "temp",
+    ".tmp",
+    ".temp",
+    # Log directories
+    "logs",
 }
 DEFAULT_IGNORE_PATTERNS = {
     "*.pyc",
@@ -33,7 +50,11 @@ DEFAULT_IGNORE_PATTERNS = {
     "*.egg-info",
     ".DS_Store",
     "*.swp",
+    "*.swo",
+    "*~",
     "*.bak",
+    "*.log",
+    "Thumbs.db",
 }
 
 
@@ -86,24 +107,47 @@ def is_path_ignored(
     relative_path: str, project_root: Optional[str], ignore_patterns: Set[str]
 ) -> bool:
     """Checks if a path should be ignored based on default and custom rules."""
-    path_parts = set(relative_path.replace("\\", "/").split("/"))
+    norm_rel_path = relative_path.replace("\\", "/")
+    path_parts = norm_rel_path.split("/")
 
+    # Check if any directory component is in ALWAYS_IGNORE_DIRS
     if any(part in ALWAYS_IGNORE_DIRS for part in path_parts):
+        return True
+
+    # Ignore all directories starting with dot (except current directory marker)
+    # This catches .cache, .pytest_cache, .mypy_cache, etc.
+    if any(part.startswith(".") and part != "." for part in path_parts):
         return True
 
     basename = os.path.basename(relative_path)
     if any(fnmatch.fnmatch(basename, pattern) for pattern in DEFAULT_IGNORE_PATTERNS):
         return True
 
-    norm_rel_path = relative_path.replace("\\", "/")
     for pattern in ignore_patterns:
-        # Glob patterns
+        # Handle **/folder/** patterns (gitignore-style)
+        if pattern.startswith("**/") and pattern.endswith("/**"):
+            folder_name = pattern[3:-3]  # Extract 'folder' from '**/folder/**'
+            if folder_name in path_parts:
+                return True
+            continue
+
+        # Handle **/folder patterns
+        if pattern.startswith("**/"):
+            target = pattern[3:]
+            if fnmatch.fnmatch(basename, target) or any(
+                fnmatch.fnmatch(part, target) for part in path_parts
+            ):
+                return True
+            continue
+
+        # Glob patterns with wildcards
         if any(ch in pattern for ch in "*?["):
             if fnmatch.fnmatch(norm_rel_path, pattern) or fnmatch.fnmatch(
                 basename, pattern
             ):
                 return True
             continue
+
         # Directory-style patterns (with or without trailing slash)
         pat = pattern.rstrip("/")
         if norm_rel_path == pat or norm_rel_path.startswith(pat + "/"):
