@@ -384,6 +384,11 @@ def parse_arguments() -> argparse.Namespace:
         "--project-name",
         help="Project name to use in templates (defaults to directory name)",
     )
+    init_parser.add_argument(
+        "--config",
+        action="store_true",
+        help="Create .locus/settings.json with default modular export configuration",
+    )
     init_parser.add_argument("--no-color", action="store_true", help="Disable color")
 
     # Capture original argv to differentiate top-level help vs subcommand help

@@ -27,7 +27,9 @@ def handle_analyze_command(args):
     """Orchestrates the 'analyze' command workflow."""
     # Handle deprecated --generate-summary
     if args.generate_summary:
-        logger.warning("--generate-summary is deprecated. Use: -o file.md --style minimal")
+        logger.warning(
+            "--generate-summary is deprecated. Use: -o file.md --style minimal"
+        )
         if not args.output:
             args.output = args.generate_summary
             args.style = "minimal"
@@ -50,7 +52,9 @@ def handle_analyze_command(args):
         return 1
 
     target_specs = [parse_target_specifier(t) for t in args.targets]
-    project_path = os.path.abspath(os.path.commonpath([spec.path for spec in target_specs]))
+    project_path = os.path.abspath(
+        os.path.commonpath([spec.path for spec in target_specs])
+    )
     if not os.path.isdir(project_path):
         project_path = os.path.dirname(project_path)
     logger.info(f"Starting analysis in project root: {project_path}")
@@ -93,7 +97,9 @@ def handle_analyze_command(args):
 
     # Validate option combinations
     if mode == "collection" and args.style == "annotations":
-        logger.error("For directory output, use --add-annotations instead of --style annotations")
+        logger.error(
+            "For directory output, use --add-annotations instead of --style annotations"
+        )
         return 1
 
     try:
@@ -132,20 +138,37 @@ def handle_analyze_command(args):
                 if getattr(args, "flat", False):
                     print_divider()
                     print_header("Flat Summary")
-                    flat_md = tree.format_flat_list(result.required_files, include_tree_comments)
+                    flat_md = tree.format_flat_list(
+                        result.required_files, include_tree_comments
+                    )
                     print(flat_md)
 
             # Optional annotations summary hint in interactive mode
             if getattr(args, "annotations", False):
-                annotated = [fa for fa in result.required_files.values() if fa.annotations and (fa.annotations.module_docstring or fa.annotations.elements)]
-                print_info(f"Annotations extracted for {len(annotated)} files. Use -o to write a report.")
+                annotated = [
+                    fa
+                    for fa in result.required_files.values()
+                    if fa.annotations
+                    and (fa.annotations.module_docstring or fa.annotations.elements)
+                ]
+                print_info(
+                    f"Annotations extracted for {len(annotated)} files. Use -o to write a report."
+                )
 
             # Similarity output when requested
             if getattr(args, "similarity", False):
                 sim = getattr(result, "similarity", None)
-                strat = getattr(sim, "meta", {}).get("strategy", getattr(args, "sim_strategy", "exact")) if sim else getattr(args, "sim_strategy", "exact")
+                strat = (
+                    getattr(sim, "meta", {}).get(
+                        "strategy", getattr(args, "sim_strategy", "exact")
+                    )
+                    if sim
+                    else getattr(args, "sim_strategy", "exact")
+                )
                 print_divider()
-                print_similarity_summary(sim, strat, show_members=True, member_bullet="·")
+                print_similarity_summary(
+                    sim, strat, show_members=True, member_bullet="·"
+                )
 
         elif mode == "report":
             # Report mode: write to file
@@ -154,7 +177,9 @@ def handle_analyze_command(args):
             # Determine what to include based on style
             include_code = args.style == "full"
             include_annotations = args.style == "annotations" or args.annotations
-            include_headers = (args.style == "headers") or getattr(args, "headers", False)
+            include_headers = (args.style == "headers") or getattr(
+                args, "headers", False
+            )
 
             # Determine tree inclusion
             include_tree = True
@@ -170,7 +195,9 @@ def handle_analyze_command(args):
                 include_code = False
             elif getattr(args, "code", False):
                 include_code = True
-            elif (getattr(args, "headers", False) or getattr(args, "annotations", False)) and args.style == "full":
+            elif (
+                getattr(args, "headers", False) or getattr(args, "annotations", False)
+            ) and args.style == "full":
                 # Default to no code when composing headers/annotations without explicit --code
                 include_code = False
 
@@ -200,13 +227,15 @@ def handle_analyze_command(args):
             logger.info(f"Successfully wrote output to {output_path}")
 
         elif mode == "collection":
-            # Collection mode: write to directory
+            # Collection mode: write to directory (with modular grouping)
             output_path = args.output
-            code.collect_files_to_directory(result, output_path, full_code_re, annotation_re)
+            code.collect_files_modular(result, output_path, full_code_re, annotation_re)
 
             # Add annotations report if requested
             if args.add_annotations or args.annotations:
-                report.generate_annotations_report_file(result, output_path, "OUT.md", args.comments)
+                report.generate_annotations_report_file(
+                    result, output_path, "OUT.md", args.comments
+                )
 
             # Copy README if present and not skipped
             if include_readme and result.project_readme_content:
@@ -240,7 +269,9 @@ def handle_sim_command(args):
     """Similarity-only subcommand: analyze targets and print similarity summary."""
     # Resolve project root from targets
     target_specs = [parse_target_specifier(t) for t in args.targets]
-    project_path = os.path.abspath(os.path.commonpath([spec.path for spec in target_specs]))
+    project_path = os.path.abspath(
+        os.path.commonpath([spec.path for spec in target_specs])
+    )
     if not os.path.isdir(project_path):
         project_path = os.path.dirname(project_path)
     logger.info(f"Starting analysis in project root: {project_path}")
@@ -267,7 +298,12 @@ def handle_sim_command(args):
         return 1
 
     # Print concise similarity summary using shared helper
-    print_similarity_summary(result.similarity, cfg.strategy, show_members=getattr(args, "print_members", True), member_bullet="·")
+    print_similarity_summary(
+        result.similarity,
+        cfg.strategy,
+        show_members=getattr(args, "print_members", True),
+        member_bullet="·",
+    )
 
     # Optional JSON output
     out = getattr(args, "json_out", None)
@@ -290,7 +326,9 @@ def handle_sim_command(args):
 def handle_update_command(args):
     """Orchestrates the 'update' command workflow."""
     if sys.stdin.isatty():
-        print_info("Paste your Markdown content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) when done:")
+        print_info(
+            "Paste your Markdown content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) when done:"
+        )
         print_divider()
     else:
         logger.info("Reading from standard input to update files...")
@@ -312,7 +350,10 @@ def handle_update_command(args):
             dry_run=args.dry_run,
         )
     except Exception as e:
-        logger.error(f"An unexpected error occurred during the update process: {e}", exc_info=True)
+        logger.error(
+            f"An unexpected error occurred during the update process: {e}",
+            exc_info=True,
+        )
         return 1
     return 0
 
@@ -321,6 +362,7 @@ def handle_init_command(args):
     """Orchestrates the 'init' command workflow."""
     from pathlib import Path
 
+    from ..core.config import save_default_config
     from ..init.creator import FileConflictError, InitError
 
     try:
@@ -328,6 +370,7 @@ def handle_init_command(args):
         force = getattr(args, "force", False)
         interactive = not getattr(args, "non_interactive", False)
         project_name = getattr(args, "project_name", None)
+        init_config = getattr(args, "config", False)
 
         created_files = init_project(
             target_dir=target_dir,
@@ -343,6 +386,13 @@ def handle_init_command(args):
         else:
             print_info("No files were created.")
 
+        # Optionally create .locus/settings.json
+        if init_config:
+            config_path = save_default_config(target_dir)
+            print_info(
+                f"Created default configuration: {config_path.relative_to(target_dir)}"
+            )
+
     except FileConflictError:
         logger.info("Initialization cancelled due to file conflicts.")
         return 1
@@ -350,7 +400,9 @@ def handle_init_command(args):
         logger.error(f"Initialization failed: {e}")
         return 1
     except Exception as e:
-        logger.error(f"An unexpected error occurred during initialization: {e}", exc_info=True)
+        logger.error(
+            f"An unexpected error occurred during initialization: {e}", exc_info=True
+        )
         return 1
 
     return 0
