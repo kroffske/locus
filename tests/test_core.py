@@ -16,7 +16,9 @@ def test_scanner(project_structure: Path):
     )
 
     # Convert to relative paths for easier assertion
-    rel_files = {os.path.relpath(p, project_structure).replace("\\", "/") for p in scanned_files}
+    rel_files = {
+        os.path.relpath(p, project_structure).replace("\\", "/") for p in scanned_files
+    }
 
     assert "src/main.py" in rel_files
     assert "src/utils.py" in rel_files
@@ -51,7 +53,9 @@ def test_resolver(project_structure: Path):
         def __init__(self, rel_path):
             self.relative_path = rel_path
 
-    file_info_map = {path: MockFileInfo(file_map[path]["relative_path"]) for path in file_map}
+    file_info_map = {
+        path: MockFileInfo(file_map[path]["relative_path"]) for path in file_map
+    }
 
     module_to_file_map = {
         "src.utils": utils_path,
@@ -59,14 +63,22 @@ def test_resolver(project_structure: Path):
     }
 
     # Mock extract_imports to return known dependencies for main.py
-    resolver.extract_imports = lambda path, rel_path: {"src.utils", "src.models"} if "main.py" in path else set()
+    resolver.extract_imports = (
+        lambda path, rel_path: {"src.utils", "src.models"}
+        if "main.py" in path
+        else set()
+    )
 
     # Test with unlimited depth
-    resolved = resolver.resolve_dependencies(initial_files, file_info_map, module_to_file_map, -1)
+    resolved = resolver.resolve_dependencies(
+        initial_files, file_info_map, module_to_file_map, -1
+    )
     assert resolved == {main_path, utils_path, models_path}
 
     # Test with depth=0 (no resolution)
-    resolved_d0 = resolver.resolve_dependencies(initial_files, file_info_map, module_to_file_map, 0)
+    resolved_d0 = resolver.resolve_dependencies(
+        initial_files, file_info_map, module_to_file_map, 0
+    )
     assert resolved_d0 == {main_path}
 
 
@@ -86,7 +98,10 @@ def test_orchestrator_integration(project_structure: Path):
     assert "src" in result.file_tree
 
     # Check that required files are found
-    required_rel_paths = {fi.file_info.relative_path.replace("\\", "/") for fi in result.required_files.values()}
+    required_rel_paths = {
+        fi.file_info.relative_path.replace("\\", "/")
+        for fi in result.required_files.values()
+    }
     assert "src/main.py" in required_rel_paths
     assert "src/utils.py" in required_rel_paths
     assert "src/models.py" in required_rel_paths

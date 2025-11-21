@@ -1,4 +1,5 @@
 """Tests for MCP launcher functionality."""
+
 import pytest
 from unittest.mock import Mock, patch
 from locus.mcp.launcher import main, check_deps
@@ -9,7 +10,7 @@ class TestCheckDeps:
 
     def test_check_deps_all_available(self):
         """Test dependency check when all dependencies are available."""
-        with patch('importlib.import_module') as mock_import:
+        with patch("importlib.import_module") as mock_import:
             # Mock successful imports
             mock_import.return_value = Mock()
 
@@ -19,84 +20,94 @@ class TestCheckDeps:
 
     def test_check_deps_missing_sentence_transformers(self):
         """Test dependency check when sentence-transformers is missing."""
+
         def mock_import(module_name):
-            if module_name == 'sentence_transformers':
+            if module_name == "sentence_transformers":
                 raise ImportError("No module named 'sentence_transformers'")
             return Mock()
 
-        with patch('importlib.import_module', side_effect=mock_import), \
-             patch('locus.mcp.launcher.logger') as mock_logger:
-
+        with patch("importlib.import_module", side_effect=mock_import), patch(
+            "locus.mcp.launcher.logger"
+        ) as mock_logger:
             result = check_deps()
 
             assert result is False
             mock_logger.error.assert_called()
             # Check that error message mentions the missing dependency
             error_calls = [call.args[0] for call in mock_logger.error.call_args_list]
-            assert any('sentence-transformers' in call for call in error_calls)
+            assert any("sentence-transformers" in call for call in error_calls)
 
     def test_check_deps_missing_lancedb(self):
         """Test dependency check when lancedb is missing."""
+
         def mock_import(module_name):
-            if module_name == 'lancedb':
+            if module_name == "lancedb":
                 raise ImportError("No module named 'lancedb'")
             return Mock()
 
-        with patch('importlib.import_module', side_effect=mock_import), \
-             patch('locus.mcp.launcher.logger') as mock_logger:
-
+        with patch("importlib.import_module", side_effect=mock_import), patch(
+            "locus.mcp.launcher.logger"
+        ) as mock_logger:
             result = check_deps()
 
             assert result is False
             error_calls = [call.args[0] for call in mock_logger.error.call_args_list]
-            assert any('lancedb' in call for call in error_calls)
+            assert any("lancedb" in call for call in error_calls)
 
     def test_check_deps_missing_fastmcp(self):
         """Test dependency check when fastmcp is missing."""
+
         def mock_import(module_name):
-            if module_name == 'fastmcp':
+            if module_name == "fastmcp":
                 raise ImportError("No module named 'fastmcp'")
             return Mock()
 
-        with patch('importlib.import_module', side_effect=mock_import), \
-             patch('locus.mcp.launcher.logger') as mock_logger:
-
+        with patch("importlib.import_module", side_effect=mock_import), patch(
+            "locus.mcp.launcher.logger"
+        ) as mock_logger:
             result = check_deps()
 
             assert result is False
             error_calls = [call.args[0] for call in mock_logger.error.call_args_list]
-            assert any('fastmcp' in call for call in error_calls)
+            assert any("fastmcp" in call for call in error_calls)
 
     def test_check_deps_multiple_missing(self):
         """Test dependency check when multiple dependencies are missing."""
+
         def mock_import(module_name):
-            if module_name in ['sentence_transformers', 'lancedb']:
+            if module_name in ["sentence_transformers", "lancedb"]:
                 raise ImportError(f"No module named '{module_name}'")
             return Mock()
 
-        with patch('importlib.import_module', side_effect=mock_import), \
-             patch('locus.mcp.launcher.logger') as mock_logger:
-
+        with patch("importlib.import_module", side_effect=mock_import), patch(
+            "locus.mcp.launcher.logger"
+        ) as mock_logger:
             result = check_deps()
 
             assert result is False
             error_calls = [call.args[0] for call in mock_logger.error.call_args_list]
-            assert any('sentence-transformers' in call and 'lancedb' in call for call in error_calls)
+            assert any(
+                "sentence-transformers" in call and "lancedb" in call
+                for call in error_calls
+            )
 
     def test_check_deps_install_instruction(self):
         """Test that dependency check provides installation instructions."""
+
         def mock_import(module_name):
-            if module_name == 'sentence_transformers':
+            if module_name == "sentence_transformers":
                 raise ImportError("No module named 'sentence_transformers'")
             return Mock()
 
-        with patch('importlib.import_module', side_effect=mock_import), \
-             patch('locus.mcp.launcher.logger') as mock_logger:
-
+        with patch("importlib.import_module", side_effect=mock_import), patch(
+            "locus.mcp.launcher.logger"
+        ) as mock_logger:
             check_deps()
 
             error_calls = [call.args[0] for call in mock_logger.error.call_args_list]
-            assert any("pip install 'locus-analyzer[mcp]'" in call for call in error_calls)
+            assert any(
+                "pip install 'locus-analyzer[mcp]'" in call for call in error_calls
+            )
 
 
 class TestMain:
@@ -104,13 +115,13 @@ class TestMain:
 
     def test_main_serve_command_success(self):
         """Test successful serve command execution."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ):
             mock_container = Mock()
             mock_app = Mock()
             mock_app.run_stdio = Mock()
@@ -124,26 +135,22 @@ class TestMain:
 
     def test_main_missing_dependencies(self):
         """Test main function when dependencies are missing."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=False), \
-             patch('sys.exit') as mock_exit, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=False
+        ), patch("sys.exit") as mock_exit, patch("logging.basicConfig"):
             main()
 
             mock_exit.assert_called_once_with(1)
 
     def test_main_invalid_command(self):
         """Test main function with invalid command."""
-        test_args = ['launcher.py', 'invalid_command']
+        test_args = ["launcher.py", "invalid_command"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('logging.basicConfig'), \
-             patch('argparse.ArgumentParser.error'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("logging.basicConfig"), patch("argparse.ArgumentParser.error"):
             try:
                 main()
             except SystemExit:
@@ -151,13 +158,11 @@ class TestMain:
 
     def test_main_no_command(self):
         """Test main function with no command specified."""
-        test_args = ['launcher.py']
+        test_args = ["launcher.py"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('logging.basicConfig'), \
-             patch('argparse.ArgumentParser.error'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("logging.basicConfig"), patch("argparse.ArgumentParser.error"):
             try:
                 main()
             except SystemExit:
@@ -165,13 +170,13 @@ class TestMain:
 
     def test_main_logging_setup(self):
         """Test that logging is set up correctly."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container'), \
-             patch('logging.basicConfig') as mock_logging:
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container"), patch(
+            "logging.basicConfig"
+        ) as mock_logging:
             try:
                 main()
             except Exception:
@@ -179,18 +184,18 @@ class TestMain:
 
             mock_logging.assert_called_once()
             call_kwargs = mock_logging.call_args[1]
-            assert 'level' in call_kwargs
-            assert 'format' in call_kwargs
+            assert "level" in call_kwargs
+            assert "format" in call_kwargs
 
     def test_main_container_creation(self):
         """Test that container is created and MCP app is retrieved."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ):
             mock_container = Mock()
             mock_app = Mock()
             mock_container.mcp_app.return_value = mock_app
@@ -203,28 +208,27 @@ class TestMain:
 
     def test_main_exception_handling(self):
         """Test main function handles exceptions gracefully."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container', side_effect=Exception("Container error")), \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch(
+            "locus.mcp.launcher.get_container", side_effect=Exception("Container error")
+        ), patch("logging.basicConfig"):
             with pytest.raises(Exception, match="Container error"):
                 main()
 
     def test_main_argument_parsing(self):
         """Test argument parsing functionality."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'), \
-             patch('argparse.ArgumentParser.parse_args') as mock_parse:
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ), patch("argparse.ArgumentParser.parse_args") as mock_parse:
             mock_args = Mock()
-            mock_args.command = 'serve'
+            mock_args.command = "serve"
             mock_parse.return_value = mock_args
 
             mock_container = Mock()
@@ -238,11 +242,9 @@ class TestMain:
 
     def test_main_help_command(self):
         """Test help command functionality."""
-        test_args = ['launcher.py', '--help']
+        test_args = ["launcher.py", "--help"]
 
-        with patch('sys.argv', test_args), \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch("logging.basicConfig"):
             with pytest.raises(SystemExit) as excinfo:
                 main()
 
@@ -252,11 +254,9 @@ class TestMain:
     def test_main_version_handling(self):
         """Test that version information can be displayed."""
         # This test assumes there might be a --version flag
-        test_args = ['launcher.py', '--version']
+        test_args = ["launcher.py", "--version"]
 
-        with patch('sys.argv', test_args), \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch("logging.basicConfig"):
             try:
                 main()
             except SystemExit as e:
@@ -292,18 +292,18 @@ class TestLauncherIntegration:
         subparsers.add_parser("serve", help="Start the MCP server")
 
         # Should be able to parse valid commands
-        args = parser.parse_args(['serve'])
-        assert args.command == 'serve'
+        args = parser.parse_args(["serve"])
+        assert args.command == "serve"
 
     def test_full_launcher_workflow_mock(self):
         """Test the full launcher workflow with mocks."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig') as mock_logging:
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ) as mock_logging:
             # Setup complete mock chain
             mock_container = Mock()
             mock_app = Mock()
@@ -323,33 +323,35 @@ class TestLauncherIntegration:
     def test_dependency_check_integration(self):
         """Test dependency checking with various scenarios."""
         # Test with no modules available
-        with patch('importlib.import_module', side_effect=ImportError), \
-             patch('locus.mcp.launcher.logger') as mock_logger:
-
+        with patch("importlib.import_module", side_effect=ImportError), patch(
+            "locus.mcp.launcher.logger"
+        ) as mock_logger:
             result = check_deps()
             assert result is False
             assert mock_logger.error.called
 
         # Test with all modules available
-        with patch('importlib.import_module', return_value=Mock()):
+        with patch("importlib.import_module", return_value=Mock()):
             result = check_deps()
             assert result is True
 
     def test_error_propagation(self):
         """Test that errors propagate correctly through the launcher."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("logging.basicConfig"):
             # Test container creation error
-            with patch('locus.mcp.launcher.get_container', side_effect=ImportError("Missing module")):
+            with patch(
+                "locus.mcp.launcher.get_container",
+                side_effect=ImportError("Missing module"),
+            ):
                 with pytest.raises(ImportError, match="Missing module"):
                     main()
 
             # Test MCP app creation error
-            with patch('locus.mcp.launcher.get_container') as mock_get_container:
+            with patch("locus.mcp.launcher.get_container") as mock_get_container:
                 mock_container = Mock()
                 mock_container.mcp_app.side_effect = Exception("App creation failed")
                 mock_get_container.return_value = mock_container
@@ -359,13 +361,13 @@ class TestLauncherIntegration:
 
     def test_launcher_with_real_argument_parsing(self):
         """Test launcher with real argument parsing (no mocks on argparse)."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ):
             mock_container = Mock()
             mock_app = Mock()
             mock_container.mcp_app.return_value = mock_app
@@ -384,13 +386,13 @@ class TestLauncherEdgeCases:
 
     def test_launcher_with_corrupted_container(self):
         """Test launcher behavior when container is corrupted."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ):
             # Return a container that doesn't have the expected method
             mock_container = Mock(spec=[])  # Empty spec means no methods
             mock_get_container.return_value = mock_container
@@ -400,27 +402,28 @@ class TestLauncherEdgeCases:
 
     def test_launcher_with_partial_dependencies(self):
         """Test launcher when only some dependencies are available."""
+
         def selective_import(module_name):
-            if module_name in ['sentence_transformers', 'lancedb']:
+            if module_name in ["sentence_transformers", "lancedb"]:
                 return Mock()
             else:
                 raise ImportError(f"No module named '{module_name}'")
 
-        with patch('importlib.import_module', side_effect=selective_import), \
-             patch('locus.mcp.launcher.logger'):
-
+        with patch("importlib.import_module", side_effect=selective_import), patch(
+            "locus.mcp.launcher.logger"
+        ):
             result = check_deps()
             assert result is False
 
     def test_launcher_signal_handling(self):
         """Test that launcher can handle signals gracefully."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ):
             mock_container = Mock()
             mock_app = Mock()
 
@@ -434,13 +437,13 @@ class TestLauncherEdgeCases:
 
     def test_launcher_memory_usage(self):
         """Test that launcher doesn't consume excessive memory during startup."""
-        test_args = ['launcher.py', 'serve']
+        test_args = ["launcher.py", "serve"]
 
-        with patch('sys.argv', test_args), \
-             patch('locus.mcp.launcher.check_deps', return_value=True), \
-             patch('locus.mcp.launcher.get_container') as mock_get_container, \
-             patch('logging.basicConfig'):
-
+        with patch("sys.argv", test_args), patch(
+            "locus.mcp.launcher.check_deps", return_value=True
+        ), patch("locus.mcp.launcher.get_container") as mock_get_container, patch(
+            "logging.basicConfig"
+        ):
             mock_container = Mock()
             mock_app = Mock()
             mock_container.mcp_app.return_value = mock_app

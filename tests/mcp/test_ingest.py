@@ -1,4 +1,5 @@
 """Tests for code ingest component functionality."""
+
 import asyncio
 import pytest
 from unittest.mock import Mock, patch
@@ -14,7 +15,7 @@ class TestCodeIngestComponent:
         self.mock_vector_store = Mock()
         self.component = CodeIngestComponent(
             embed_component=self.mock_embed_component,
-            vector_store=self.mock_vector_store
+            vector_store=self.mock_vector_store,
         )
 
     def test_init(self):
@@ -28,12 +29,14 @@ class TestCodeIngestComponent:
         # Setup mocks
         self.mock_embed_component.embed_chunks.return_value = [
             [0.1, 0.2, 0.3],
-            [0.4, 0.5, 0.6]
+            [0.4, 0.5, 0.6],
         ]
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             # Mock config loading
             mock_config.load_project_config.return_value = ({"*.pyc"}, {"*.py"})
 
@@ -57,18 +60,20 @@ class TestCodeIngestComponent:
         """Test indexing multiple files."""
         self.mock_embed_component.embed_chunks.return_value = [
             [0.1, 0.2, 0.3],
-            [0.4, 0.5, 0.6]
+            [0.4, 0.5, 0.6],
         ]
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = ({"*.pyc"}, {"*.py"})
 
             # Mock scanner to return multiple files
             files = [
                 str(temp_project / "src" / "main.py"),
-                str(temp_project / "src" / "utils.py")
+                str(temp_project / "src" / "utils.py"),
             ]
             mock_scanner.scan_directory.return_value = files
 
@@ -86,9 +91,11 @@ class TestCodeIngestComponent:
         """Test force rebuild functionality."""
         self.mock_embed_component.embed_chunks.return_value = [[0.1, 0.2, 0.3]]
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             test_file = temp_project / "src" / "main.py"
             mock_scanner.scan_directory.return_value = [str(test_file)]
@@ -104,9 +111,11 @@ class TestCodeIngestComponent:
         """Test without force rebuild."""
         self.mock_embed_component.embed_chunks.return_value = [[0.1, 0.2, 0.3]]
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             test_file = temp_project / "src" / "main.py"
             mock_scanner.scan_directory.return_value = [str(test_file)]
@@ -123,9 +132,11 @@ class TestCodeIngestComponent:
         empty_file = temp_project / "empty.py"
         empty_file.write_text("")
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             mock_scanner.scan_directory.return_value = [str(empty_file)]
 
@@ -139,10 +150,13 @@ class TestCodeIngestComponent:
     @pytest.mark.asyncio
     async def test_index_paths_file_read_error(self, temp_project):
         """Test handling of file read errors."""
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config, \
-             patch('builtins.open', side_effect=PermissionError("Access denied")):
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config, patch(
+            "builtins.open", side_effect=PermissionError("Access denied")
+        ):
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             test_file = temp_project / "src" / "main.py"
             mock_scanner.scan_directory.return_value = [str(test_file)]
@@ -158,7 +172,7 @@ class TestCodeIngestComponent:
         """Test successful file processing."""
         self.mock_embed_component.embed_chunks.return_value = [
             [0.1, 0.2, 0.3],
-            [0.4, 0.5, 0.6]
+            [0.4, 0.5, 0.6],
         ]
 
         test_file = temp_project / "src" / "main.py"
@@ -223,15 +237,15 @@ class TestCodeIngestComponent:
         call_args = self.mock_vector_store.upsert.call_args[0][0]
         chunk_data = call_args[0]
 
-        assert hasattr(chunk_data, 'chunk_id')
-        assert hasattr(chunk_data, 'repo_root')
-        assert hasattr(chunk_data, 'rel_path')
-        assert hasattr(chunk_data, 'start_line')
-        assert hasattr(chunk_data, 'end_line')
-        assert hasattr(chunk_data, 'text')
-        assert hasattr(chunk_data, 'vector')
-        assert hasattr(chunk_data, 'language')
-        assert hasattr(chunk_data, 'symbols')
+        assert hasattr(chunk_data, "chunk_id")
+        assert hasattr(chunk_data, "repo_root")
+        assert hasattr(chunk_data, "rel_path")
+        assert hasattr(chunk_data, "start_line")
+        assert hasattr(chunk_data, "end_line")
+        assert hasattr(chunk_data, "text")
+        assert hasattr(chunk_data, "vector")
+        assert hasattr(chunk_data, "language")
+        assert hasattr(chunk_data, "symbols")
 
         assert chunk_data.repo_root == config_root
         assert chunk_data.language == "python"  # Placeholder
@@ -264,16 +278,18 @@ class TestCodeIngestComponent:
 
         self.component._process_file = mock_process_file
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
 
             # Multiple files
             files = [
                 str(temp_project / "src" / "main.py"),
                 str(temp_project / "src" / "utils.py"),
-                str(temp_project / "README.md")
+                str(temp_project / "README.md"),
             ]
             mock_scanner.scan_directory.return_value = files
 
@@ -304,9 +320,11 @@ class TestCodeIngestComponent:
         self.component._process_file = mock_process_file
         self.mock_embed_component.embed_chunks.return_value = [[0.1, 0.2, 0.3]]
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             mock_scanner.scan_directory.return_value = [str(good_file), str(bad_file)]
 
@@ -328,12 +346,12 @@ class TestCodeIngestComponentIntegration:
 
         # Setup realistic embeddings
         mock_embed_component.embed_chunks.return_value = [
-            [0.1, 0.2, 0.3, 0.4] for _ in range(10)  # Simulate multiple chunks
+            [0.1, 0.2, 0.3, 0.4]
+            for _ in range(10)  # Simulate multiple chunks
         ]
 
         component = CodeIngestComponent(
-            embed_component=mock_embed_component,
-            vector_store=mock_vector_store
+            embed_component=mock_embed_component, vector_store=mock_vector_store
         )
 
         # Test with real project structure
@@ -364,13 +382,14 @@ class TestCodeIngestComponentIntegration:
         ]
 
         component = CodeIngestComponent(
-            embed_component=mock_embed_component,
-            vector_store=mock_vector_store
+            embed_component=mock_embed_component, vector_store=mock_vector_store
         )
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             mock_scanner.scan_directory.return_value = [str(large_file)]
 
@@ -390,16 +409,19 @@ class TestCodeIngestComponentIntegration:
         mock_vector_store = Mock()
 
         # Simulate embedding service errors
-        mock_embed_component.embed_chunks.side_effect = Exception("Embedding service down")
-
-        component = CodeIngestComponent(
-            embed_component=mock_embed_component,
-            vector_store=mock_vector_store
+        mock_embed_component.embed_chunks.side_effect = Exception(
+            "Embedding service down"
         )
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.scanner') as mock_scanner, \
-             patch('locus.mcp.components.ingest.code_ingest_component.config') as mock_config:
+        component = CodeIngestComponent(
+            embed_component=mock_embed_component, vector_store=mock_vector_store
+        )
 
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.scanner"
+        ) as mock_scanner, patch(
+            "locus.mcp.components.ingest.code_ingest_component.config"
+        ) as mock_config:
             mock_config.load_project_config.return_value = (set(), {"*.py"})
             test_file = temp_project / "src" / "main.py"
             mock_scanner.scan_directory.return_value = [str(test_file)]

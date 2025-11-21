@@ -18,11 +18,15 @@ def test_format_tree():
     }
 
     # Setup mock analysis results
-    main_info = FileInfo(absolute_path="", relative_path="src/main.py", filename="main.py")
+    main_info = FileInfo(
+        absolute_path="", relative_path="src/main.py", filename="main.py"
+    )
     main_ann = AnnotationInfo(module_docstring="This is the main entry point.")
     main_analysis = FileAnalysis(file_info=main_info, annotations=main_ann)
 
-    utils_info = FileInfo(absolute_path="", relative_path="src/utils.py", filename="utils.py")
+    utils_info = FileInfo(
+        absolute_path="", relative_path="src/utils.py", filename="utils.py"
+    )
     utils_analysis = FileAnalysis(file_info=utils_info, comments=["Helper functions."])
 
     file_details = {
@@ -31,13 +35,17 @@ def test_format_tree():
     }
 
     # Test with comments disabled
-    output_no_comments = tree.format_tree_markdown(file_tree, file_details, include_comments=False)
+    output_no_comments = tree.format_tree_markdown(
+        file_tree, file_details, include_comments=False
+    )
     assert "├── README.md" in output_no_comments
     assert "└── src/" in output_no_comments
     assert "#" not in output_no_comments
 
     # Test with comments enabled
-    output_with_comments = tree.format_tree_markdown(file_tree, file_details, include_comments=True)
+    output_with_comments = tree.format_tree_markdown(
+        file_tree, file_details, include_comments=True
+    )
     assert "main.py  # This is the main entry point" in output_with_comments
     assert "utils.py  # Helper functions" in output_with_comments
 
@@ -58,7 +66,9 @@ def test_get_output_content():
     assert "def my_func()" in content
 
     # Test annotation stub mode
-    stub_content, stub_mode = helpers.get_output_content(analysis, None, ".*")  # Regex matches anything
+    stub_content, stub_mode = helpers.get_output_content(
+        analysis, None, ".*"
+    )  # Regex matches anything
     assert stub_mode == "annotation_stub"
     assert "def my_func(...): ..." in stub_content
 
@@ -86,7 +96,9 @@ def test_line_range_slicing():
     """Selected line ranges should slice content in output."""
     info = FileInfo(absolute_path="", relative_path="mod.py", filename="mod.py")
     content = "\n".join([f"L{i}" for i in range(1, 21)])
-    analysis = FileAnalysis(file_info=info, content=content, line_ranges=[(3, 5), (10, 10)])
+    analysis = FileAnalysis(
+        file_info=info, content=content, line_ranges=[(3, 5), (10, 10)]
+    )
 
     result = AnalysisResult(project_path="")
     result.required_files = {"p": analysis}
