@@ -48,7 +48,12 @@ def serialize_similarity(result: AnalysisResult) -> dict:
     }
 
 
-def print_similarity_summary(sim: Optional[SimilarityResult], strategy: str, show_members: bool = True, member_bullet: str = "·") -> None:
+def print_similarity_summary(
+    sim: Optional[SimilarityResult],
+    strategy: str,
+    show_members: bool = True,
+    member_bullet: str = "·",
+) -> None:
     """Print a concise similarity summary consistently across commands.
 
     - Prints header and either a no-results message or a summary with optional members.
@@ -58,7 +63,9 @@ def print_similarity_summary(sim: Optional[SimilarityResult], strategy: str, sho
     if not sim or not getattr(sim, "clusters", None):
         print_info(f"No duplicates found (strategy: {strategy}).")
         return
-    print_info(f"Strategy: {strategy} · Units: {len(sim.units)} · Clusters: {len(sim.clusters)}")
+    print_info(
+        f"Strategy: {strategy} · Units: {len(sim.units)} · Clusters: {len(sim.clusters)}"
+    )
     if not show_members:
         return
     for cluster in sim.clusters:
@@ -66,4 +73,6 @@ def print_similarity_summary(sim: Optional[SimilarityResult], strategy: str, sho
         ids = set(cluster.member_ids)
         members = [u for u in sim.units if u.id in ids]
         for u in sorted(members, key=lambda x: (x.rel_path, x.span[0])):
-            print(f"    {member_bullet} {u.rel_path}:{u.span[0]}-{u.span[1]}  {u.qualname}")
+            print(
+                f"    {member_bullet} {u.rel_path}:{u.span[0]}-{u.span[1]}  {u.qualname}"
+            )

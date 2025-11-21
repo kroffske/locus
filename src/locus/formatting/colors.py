@@ -66,10 +66,17 @@ def setup_rich_logging(level="INFO", log_file=None):
     # Add file handler if specified
     if log_file:
         file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
         handlers.append(file_handler)
 
-    logging.basicConfig(level=getattr(logging, level), format="%(message)s", handlers=handlers, force=True)
+    logging.basicConfig(
+        level=getattr(logging, level),
+        format="%(message)s",
+        handlers=handlers,
+        force=True,
+    )
 
 
 def _safe_print(renderable: str):
@@ -152,7 +159,9 @@ def prompt(text: str, default=None):
     try:
         return console.input(prompt_text).strip() or default
     except UnicodeEncodeError:
-        return input(text + (f" [{default}]" if default else "") + ": ").strip() or default
+        return (
+            input(text + (f" [{default}]" if default else "") + ": ").strip() or default
+        )
 
 
 def confirm(text: str):

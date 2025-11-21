@@ -41,7 +41,9 @@ def analyze_python_file(file_info: FileInfo, file_cache: FileCache) -> FileAnaly
     content = file_cache.get_content(file_info.absolute_path)
     if content is None:
         file_info.is_empty = True
-        return FileAnalysis(file_info=file_info, content="# ERROR: Could not read file content.")
+        return FileAnalysis(
+            file_info=file_info, content="# ERROR: Could not read file content."
+        )
 
     analysis = FileAnalysis(file_info=file_info, content=content)
 
@@ -83,12 +85,18 @@ def _extract_annotations(tree: ast.AST) -> AnnotationInfo:
                 annotations.imports.append(import_stmt)
         elif isinstance(node, ast.ImportFrom):
             if node.module:
-                names = ", ".join(f"{n.name} as {n.asname}" if n.asname else n.name for n in node.names)
+                names = ", ".join(
+                    f"{n.name} as {n.asname}" if n.asname else n.name
+                    for n in node.names
+                )
                 level = "." * node.level
                 import_stmt = f"from {level}{node.module} import {names}"
             else:
                 # Relative import without module name
-                names = ", ".join(f"{n.name} as {n.asname}" if n.asname else n.name for n in node.names)
+                names = ", ".join(
+                    f"{n.name} as {n.asname}" if n.asname else n.name
+                    for n in node.names
+                )
                 level = "." * node.level
                 import_stmt = f"from {level} import {names}"
             annotations.imports.append(import_stmt)
@@ -100,7 +108,11 @@ def _extract_annotations(tree: ast.AST) -> AnnotationInfo:
                 signature = ast.unparse(node).split("\n", 1)[0].strip(":")
             except Exception:
                 signature = f"def {node.name}(...)"
-            annotations.elements[node.name] = {"type": "function", "signature": signature, "docstring": ast.get_docstring(node)}
+            annotations.elements[node.name] = {
+                "type": "function",
+                "signature": signature,
+                "docstring": ast.get_docstring(node),
+            }
         elif isinstance(node, ast.ClassDef):
             # Extract decorators
             decorators = []
@@ -122,7 +134,9 @@ def _extract_annotations(tree: ast.AST) -> AnnotationInfo:
                         attr_type = ast.unparse(item.annotation)
                         if item.value:
                             attr_value = ast.unparse(item.value)
-                            attributes.append(f"{attr_name}: {attr_type} = {attr_value}")
+                            attributes.append(
+                                f"{attr_name}: {attr_type} = {attr_value}"
+                            )
                         else:
                             attributes.append(f"{attr_name}: {attr_type}")
                     except Exception:
@@ -134,9 +148,18 @@ def _extract_annotations(tree: ast.AST) -> AnnotationInfo:
                         m_sig = ast.unparse(item).split("\n", 1)[0].strip(":")
                     except Exception:
                         m_sig = f"def {item.name}(...)"
-                    methods[item.name] = {"signature": m_sig, "docstring": ast.get_docstring(item)}
+                    methods[item.name] = {
+                        "signature": m_sig,
+                        "docstring": ast.get_docstring(item),
+                    }
 
-            annotations.elements[node.name] = {"type": "class", "docstring": ast.get_docstring(node), "decorators": decorators, "attributes": attributes, "methods": methods}
+            annotations.elements[node.name] = {
+                "type": "class",
+                "docstring": ast.get_docstring(node),
+                "decorators": decorators,
+                "attributes": attributes,
+                "methods": methods,
+            }
     return annotations
 
 

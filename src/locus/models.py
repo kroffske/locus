@@ -51,7 +51,9 @@ class AnalysisResult:
     project_path: str
     config_root_path: Optional[str] = None
     target_specs: List[TargetSpecifier] = field(default_factory=list)
-    required_files: Dict[str, FileAnalysis] = field(default_factory=dict)  # Keyed by absolute path
+    required_files: Dict[str, FileAnalysis] = field(
+        default_factory=dict
+    )  # Keyed by absolute path
     file_tree: Dict[str, Any] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
     project_readme_content: Optional[str] = None

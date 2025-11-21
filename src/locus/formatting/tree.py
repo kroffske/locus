@@ -17,8 +17,13 @@ def format_tree_markdown(
     ascii_tree: bool = False,
 ) -> str:
     """Recursively formats a file tree into a Markdown string."""
-    details_map = {fa.file_info.relative_path.replace("\\", "/"): fa for fa in file_details.values()}
-    sorted_keys = sorted(tree_data.keys(), key=lambda k: (isinstance(tree_data[k], dict), k.lower()))
+    details_map = {
+        fa.file_info.relative_path.replace("\\", "/"): fa
+        for fa in file_details.values()
+    }
+    sorted_keys = sorted(
+        tree_data.keys(), key=lambda k: (isinstance(tree_data[k], dict), k.lower())
+    )
 
     output_lines = []
     for i, key in enumerate(sorted_keys):
@@ -31,14 +36,20 @@ def format_tree_markdown(
         comment_suffix = ""
         analysis = None
         if include_comments:
-            analysis = details_map.get(node_rel_path) or details_map.get(os.path.join(node_rel_path, "__init__.py"))
+            analysis = details_map.get(node_rel_path) or details_map.get(
+                os.path.join(node_rel_path, "__init__.py")
+            )
             summary = get_summary_from_analysis(analysis)
             if summary:
                 comment_suffix = f"  # {summary}"
 
         if isinstance(node_value, dict):  # Directory
             output_lines.append(f"{prefix}{connector}{key}/{comment_suffix}")
-            child_prefix = prefix + ("  " if is_last else "| ") if ascii_tree else prefix + ("    " if is_last else "│   ")
+            child_prefix = (
+                prefix + ("  " if is_last else "| ")
+                if ascii_tree
+                else prefix + ("    " if is_last else "│   ")
+            )
             output_lines.append(
                 format_tree_markdown(
                     node_value,
@@ -55,7 +66,9 @@ def format_tree_markdown(
     return "\n".join(output_lines)
 
 
-def format_flat_list(file_details: Dict[str, FileAnalysis], include_comments: bool) -> str:
+def format_flat_list(
+    file_details: Dict[str, FileAnalysis], include_comments: bool
+) -> str:
     """Formats a flat list of files with optional one-line summaries.
 
     Output format: `path/to/file.py # summary`

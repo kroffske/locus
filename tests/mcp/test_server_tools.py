@@ -1,4 +1,5 @@
 """Tests for MCP server tools functionality."""
+
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 
@@ -8,15 +9,13 @@ class TestGetFileContext:
 
     def test_get_file_context_success(self, temp_project):
         """Test successful file context retrieval."""
-        with patch('locus.mcp.server.tools.get_file_context.analyze') as mock_analyze, \
-             patch('os.getcwd', return_value=str(temp_project)):
-
+        with patch(
+            "locus.mcp.server.tools.get_file_context.analyze"
+        ) as mock_analyze, patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             # Mock analyze function
-            mock_analyze.return_value = [
-                {"text": "File content from analyzer"}
-            ]
+            mock_analyze.return_value = [{"text": "File content from analyzer"}]
 
             result = get_file_context("src/main.py")
 
@@ -26,13 +25,13 @@ class TestGetFileContext:
             # Verify analyze was called correctly
             mock_analyze.assert_called_once()
             call_args = mock_analyze.call_args
-            assert call_args[1]['project_path'] == str(temp_project)
+            assert call_args[1]["project_path"] == str(temp_project)
 
     def test_get_file_context_with_line_range(self, temp_project):
         """Test file context retrieval with specific line range."""
-        with patch('locus.mcp.server.tools.get_file_context.analyze') as mock_analyze, \
-             patch('os.getcwd', return_value=str(temp_project)):
-
+        with patch(
+            "locus.mcp.server.tools.get_file_context.analyze"
+        ) as mock_analyze, patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             mock_analyze.return_value = [{"text": "Specific lines"}]
@@ -41,13 +40,13 @@ class TestGetFileContext:
 
             # Verify line range was passed to analyzer
             call_args = mock_analyze.call_args
-            target_specs = call_args[1]['target_specs']
+            target_specs = call_args[1]["target_specs"]
             assert len(target_specs) == 1
             assert target_specs[0].line_ranges == [(5, 10)]
 
     def test_get_file_context_path_traversal_protection(self, temp_project):
         """Test protection against path traversal attacks."""
-        with patch('os.getcwd', return_value=str(temp_project)):
+        with patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             # Try to access file outside repo
@@ -59,7 +58,7 @@ class TestGetFileContext:
 
     def test_get_file_context_path_traversal_protection_relative(self, temp_project):
         """Test protection against relative path traversal."""
-        with patch('os.getcwd', return_value=str(temp_project)):
+        with patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             # Try various path traversal patterns
@@ -68,7 +67,7 @@ class TestGetFileContext:
                 "src/../../../etc/passwd",
                 "..\\..\\windows\\system32\\config",
                 "/etc/passwd",
-                "C:\\Windows\\System32\\config"
+                "C:\\Windows\\System32\\config",
             ]
 
             for path in dangerous_paths:
@@ -78,9 +77,9 @@ class TestGetFileContext:
 
     def test_get_file_context_valid_relative_path(self, temp_project):
         """Test that valid relative paths within repo work."""
-        with patch('locus.mcp.server.tools.get_file_context.analyze') as mock_analyze, \
-             patch('os.getcwd', return_value=str(temp_project)):
-
+        with patch(
+            "locus.mcp.server.tools.get_file_context.analyze"
+        ) as mock_analyze, patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             mock_analyze.return_value = [{"text": "Valid file content"}]
@@ -90,7 +89,7 @@ class TestGetFileContext:
                 "src/main.py",
                 "./src/main.py",
                 "README.md",
-                "src/../README.md"  # This resolves to README.md within repo
+                "src/../README.md",  # This resolves to README.md within repo
             ]
 
             for path in valid_paths:
@@ -100,7 +99,10 @@ class TestGetFileContext:
 
     def test_get_file_context_missing_mcp_types(self, temp_project):
         """Test error handling when MCP types are missing."""
-        with patch('locus.mcp.server.tools.get_file_context.TextContent', side_effect=ImportError):
+        with patch(
+            "locus.mcp.server.tools.get_file_context.TextContent",
+            side_effect=ImportError,
+        ):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             with pytest.raises(ImportError, match="MCP types not found"):
@@ -108,9 +110,9 @@ class TestGetFileContext:
 
     def test_get_file_context_no_line_range(self, temp_project):
         """Test file context without line range specification."""
-        with patch('locus.mcp.server.tools.get_file_context.analyze') as mock_analyze, \
-             patch('os.getcwd', return_value=str(temp_project)):
-
+        with patch(
+            "locus.mcp.server.tools.get_file_context.analyze"
+        ) as mock_analyze, patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             mock_analyze.return_value = [{"text": "Full file content"}]
@@ -119,7 +121,7 @@ class TestGetFileContext:
 
             # Should pass empty line_ranges
             call_args = mock_analyze.call_args
-            target_specs = call_args[1]['target_specs']
+            target_specs = call_args[1]["target_specs"]
             assert target_specs[0].line_ranges == []
 
 
@@ -128,8 +130,9 @@ class TestSearchCodebase:
 
     def test_search_codebase_basic(self):
         """Test basic codebase search functionality."""
-        with patch('locus.mcp.server.tools.search_codebase.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             # Mock container and search engine
@@ -137,12 +140,12 @@ class TestSearchCodebase:
             mock_engine = Mock()
             mock_engine.search.return_value = [
                 {
-                    'chunk_id': 'chunk1',
-                    'rel_path': 'src/main.py',
-                    'text': 'def hello(): pass',
-                    'start_line': 1,
-                    'end_line': 1,
-                    'score': 0.95
+                    "chunk_id": "chunk1",
+                    "rel_path": "src/main.py",
+                    "text": "def hello(): pass",
+                    "start_line": 1,
+                    "end_line": 1,
+                    "score": 0.95,
                 }
             ]
             mock_container.code_search_engine.return_value = mock_engine
@@ -157,8 +160,9 @@ class TestSearchCodebase:
 
     def test_search_codebase_with_path_filter(self):
         """Test search with path glob filtering."""
-        with patch('locus.mcp.server.tools.search_codebase.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             mock_container = Mock()
@@ -176,8 +180,9 @@ class TestSearchCodebase:
 
     def test_search_codebase_with_identifiers(self):
         """Test search with identifier filtering."""
-        with patch('locus.mcp.server.tools.search_codebase.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             mock_container = Mock()
@@ -195,8 +200,9 @@ class TestSearchCodebase:
 
     def test_search_codebase_no_results(self):
         """Test search when no results are found."""
-        with patch('locus.mcp.server.tools.search_codebase.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             mock_container = Mock()
@@ -212,7 +218,10 @@ class TestSearchCodebase:
 
     def test_search_codebase_missing_mcp_types(self):
         """Test error handling when MCP types are missing."""
-        with patch('locus.mcp.server.tools.search_codebase.TextContent', side_effect=ImportError):
+        with patch(
+            "locus.mcp.server.tools.search_codebase.TextContent",
+            side_effect=ImportError,
+        ):
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             with pytest.raises(ImportError, match="MCP types not found"):
@@ -220,8 +229,9 @@ class TestSearchCodebase:
 
     def test_search_codebase_search_engine_error(self):
         """Test handling of search engine errors."""
-        with patch('locus.mcp.server.tools.search_codebase.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             mock_container = Mock()
@@ -238,8 +248,9 @@ class TestSearchCodebase:
 
     def test_search_codebase_multiple_parameters(self):
         """Test search with multiple parameters."""
-        with patch('locus.mcp.server.tools.search_codebase.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.search_codebase import search_codebase
 
             mock_container = Mock()
@@ -252,14 +263,14 @@ class TestSearchCodebase:
                 "authentication",
                 k=20,
                 path_glob="src/**/*.py",
-                identifiers=["auth", "login"]
+                identifiers=["auth", "login"],
             )
 
             mock_engine.search.assert_called_once_with(
                 "authentication",
                 k=20,
                 where="rel_path GLOB 'src/**/*.py'",
-                identifiers=["auth", "login"]
+                identifiers=["auth", "login"],
             )
 
 
@@ -269,17 +280,15 @@ class TestIndexControl:
     @pytest.mark.asyncio
     async def test_index_paths_success(self):
         """Test successful indexing of paths."""
-        with patch('locus.mcp.server.tools.index_control.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.index_control.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.index_control import index_paths
 
             # Mock container and ingest component
             mock_container = Mock()
             mock_ingest = Mock()
-            mock_ingest.index_paths = AsyncMock(return_value={
-                'files': 5,
-                'chunks': 25
-            })
+            mock_ingest.index_paths = AsyncMock(return_value={"files": 5, "chunks": 25})
             mock_container.ingest_component.return_value = mock_ingest
             mock_get_container.return_value = mock_container
 
@@ -295,13 +304,14 @@ class TestIndexControl:
     @pytest.mark.asyncio
     async def test_index_paths_with_force_rebuild(self):
         """Test indexing with force rebuild option."""
-        with patch('locus.mcp.server.tools.index_control.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.index_control.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.index_control import index_paths
 
             mock_container = Mock()
             mock_ingest = Mock()
-            mock_ingest.index_paths = AsyncMock(return_value={'files': 3, 'chunks': 15})
+            mock_ingest.index_paths = AsyncMock(return_value={"files": 3, "chunks": 15})
             mock_container.ingest_component.return_value = mock_ingest
             mock_get_container.return_value = mock_container
 
@@ -313,13 +323,16 @@ class TestIndexControl:
     @pytest.mark.asyncio
     async def test_index_paths_multiple_paths(self):
         """Test indexing multiple paths."""
-        with patch('locus.mcp.server.tools.index_control.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.index_control.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.index_control import index_paths
 
             mock_container = Mock()
             mock_ingest = Mock()
-            mock_ingest.index_paths = AsyncMock(return_value={'files': 10, 'chunks': 50})
+            mock_ingest.index_paths = AsyncMock(
+                return_value={"files": 10, "chunks": 50}
+            )
             mock_container.ingest_component.return_value = mock_ingest
             mock_get_container.return_value = mock_container
 
@@ -332,13 +345,16 @@ class TestIndexControl:
     @pytest.mark.asyncio
     async def test_index_paths_error_handling(self):
         """Test error handling during indexing."""
-        with patch('locus.mcp.server.tools.index_control.get_container') as mock_get_container:
-
+        with patch(
+            "locus.mcp.server.tools.index_control.get_container"
+        ) as mock_get_container:
             from locus.mcp.server.tools.index_control import index_paths
 
             mock_container = Mock()
             mock_ingest = Mock()
-            mock_ingest.index_paths = AsyncMock(side_effect=Exception("Indexing failed"))
+            mock_ingest.index_paths = AsyncMock(
+                side_effect=Exception("Indexing failed")
+            )
             mock_container.ingest_component.return_value = mock_ingest
             mock_get_container.return_value = mock_container
 
@@ -351,7 +367,9 @@ class TestIndexControl:
     @pytest.mark.asyncio
     async def test_index_paths_missing_mcp_types(self):
         """Test error handling when MCP types are missing."""
-        with patch('locus.mcp.server.tools.index_control.TextContent', side_effect=ImportError):
+        with patch(
+            "locus.mcp.server.tools.index_control.TextContent", side_effect=ImportError
+        ):
             from locus.mcp.server.tools.index_control import index_paths
 
             with pytest.raises(ImportError, match="MCP types not found"):
@@ -384,30 +402,32 @@ class TestMCPServerToolsIntegration:
 
         # Check get_file_context signature
         sig = inspect.signature(get_file_context)
-        assert 'path' in sig.parameters
-        assert 'start_line' in sig.parameters
-        assert 'end_line' in sig.parameters
+        assert "path" in sig.parameters
+        assert "start_line" in sig.parameters
+        assert "end_line" in sig.parameters
 
         # Check search_codebase signature
         sig = inspect.signature(search_codebase)
-        assert 'query' in sig.parameters
-        assert 'k' in sig.parameters
-        assert 'path_glob' in sig.parameters
-        assert 'identifiers' in sig.parameters
+        assert "query" in sig.parameters
+        assert "k" in sig.parameters
+        assert "path_glob" in sig.parameters
+        assert "identifiers" in sig.parameters
 
         # Check index_paths signature
         sig = inspect.signature(index_paths)
-        assert 'paths' in sig.parameters
-        assert 'force_rebuild' in sig.parameters
+        assert "paths" in sig.parameters
+        assert "force_rebuild" in sig.parameters
 
     @pytest.mark.asyncio
     async def test_tools_work_together(self, temp_project):
         """Test that tools can work together in a workflow."""
-        with patch('locus.mcp.server.tools.get_file_context.analyze') as mock_analyze, \
-             patch('locus.mcp.server.tools.search_codebase.get_container') as mock_search_container, \
-             patch('locus.mcp.server.tools.index_control.get_container') as mock_index_container, \
-             patch('os.getcwd', return_value=str(temp_project)):
-
+        with patch(
+            "locus.mcp.server.tools.get_file_context.analyze"
+        ) as mock_analyze, patch(
+            "locus.mcp.server.tools.search_codebase.get_container"
+        ) as mock_search_container, patch(
+            "locus.mcp.server.tools.index_control.get_container"
+        ) as mock_index_container, patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
             from locus.mcp.server.tools.search_codebase import search_codebase
             from locus.mcp.server.tools.index_control import index_paths
@@ -418,12 +438,14 @@ class TestMCPServerToolsIntegration:
             mock_search_container_instance = Mock()
             mock_search_engine = Mock()
             mock_search_engine.search.return_value = [{"text": "Search result"}]
-            mock_search_container_instance.code_search_engine.return_value = mock_search_engine
+            mock_search_container_instance.code_search_engine.return_value = (
+                mock_search_engine
+            )
             mock_search_container.return_value = mock_search_container_instance
 
             mock_index_container_instance = Mock()
             mock_ingest = Mock()
-            mock_ingest.index_paths = AsyncMock(return_value={'files': 1, 'chunks': 3})
+            mock_ingest.index_paths = AsyncMock(return_value={"files": 1, "chunks": 3})
             mock_index_container_instance.ingest_component.return_value = mock_ingest
             mock_index_container.return_value = mock_index_container_instance
 
@@ -442,7 +464,7 @@ class TestMCPServerToolsIntegration:
 
     def test_error_messages_are_user_friendly(self):
         """Test that error messages are user-friendly and informative."""
-        with patch('os.getcwd', return_value="/tmp/test"):
+        with patch("os.getcwd", return_value="/tmp/test"):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             # Test path traversal error message

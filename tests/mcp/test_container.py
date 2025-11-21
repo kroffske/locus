@@ -1,4 +1,5 @@
 """Tests for dependency injection container functionality."""
+
 import pytest
 from unittest.mock import Mock, patch
 from locus.mcp.di.container import get_container
@@ -19,10 +20,10 @@ class TestDIContainer:
         container = get_container()
 
         # Check that all expected component methods exist
-        assert hasattr(container, 'embedding_component')
-        assert hasattr(container, 'vector_store')
-        assert hasattr(container, 'ingest_component')
-        assert hasattr(container, 'code_search_engine')
+        assert hasattr(container, "embedding_component")
+        assert hasattr(container, "vector_store")
+        assert hasattr(container, "ingest_component")
+        assert hasattr(container, "code_search_engine")
 
         # Check that they are callable
         assert callable(container.embedding_component)
@@ -30,7 +31,7 @@ class TestDIContainer:
         assert callable(container.ingest_component)
         assert callable(container.code_search_engine)
 
-    @patch('locus.mcp.di.container.load_settings')
+    @patch("locus.mcp.di.container.load_settings")
     def test_embedding_component_creation(self, mock_load_settings):
         """Test embedding component creation from container."""
         # Mock settings
@@ -40,12 +41,15 @@ class TestDIContainer:
         mock_settings_instance.embedding.trust_remote_code = True
         mock_load_settings.return_value = mock_settings_instance
 
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+        ) as mock_embedding:
             mock_embedding_instance = Mock()
             mock_embedding.return_value = mock_embedding_instance
 
             # Reset the singleton
             import locus.mcp.di.container
+
             locus.mcp.di.container._container_instance = None
 
             container = get_container()
@@ -53,11 +57,10 @@ class TestDIContainer:
 
             assert embedding_comp is mock_embedding_instance
             mock_embedding.assert_called_once_with(
-                model_name="test-model",
-                trust_remote_code=True
+                model_name="test-model", trust_remote_code=True
             )
 
-    @patch('locus.mcp.di.container.load_settings')
+    @patch("locus.mcp.di.container.load_settings")
     def test_vector_store_creation(self, mock_load_settings):
         """Test vector store creation from container."""
         mock_settings_instance = Mock()
@@ -65,12 +68,15 @@ class TestDIContainer:
         mock_settings_instance.vector_store.path = "/test/db"
         mock_load_settings.return_value = mock_settings_instance
 
-        with patch('locus.mcp.components.vector_store.lancedb_store.LanceDBVectorStore') as mock_store:
+        with patch(
+            "locus.mcp.components.vector_store.lancedb_store.LanceDBVectorStore"
+        ) as mock_store:
             mock_store_instance = Mock()
             mock_store.return_value = mock_store_instance
 
             # Reset the singleton
             import locus.mcp.di.container
+
             locus.mcp.di.container._container_instance = None
 
             container = get_container()
@@ -79,16 +85,19 @@ class TestDIContainer:
             assert vector_store is mock_store_instance
             mock_store.assert_called_once_with(db_path="/test/db")
 
-    @patch('locus.mcp.di.container.Settings')
+    @patch("locus.mcp.di.container.Settings")
     def test_ingest_component_creation(self, mock_settings):
         """Test ingest component creation with dependencies."""
         mock_settings_instance = Mock()
         mock_settings.return_value = mock_settings_instance
 
-        with patch('locus.mcp.components.ingest.code_ingest_component.CodeIngestComponent') as mock_ingest, \
-             patch.object(get_container(), 'embedding_component') as mock_embed_method, \
-             patch.object(get_container(), 'vector_store') as mock_store_method:
-
+        with patch(
+            "locus.mcp.components.ingest.code_ingest_component.CodeIngestComponent"
+        ) as mock_ingest, patch.object(
+            get_container(), "embedding_component"
+        ) as mock_embed_method, patch.object(
+            get_container(), "vector_store"
+        ) as mock_store_method:
             mock_ingest_instance = Mock()
             mock_ingest.return_value = mock_ingest_instance
 
@@ -103,20 +112,22 @@ class TestDIContainer:
 
             assert ingest_comp is mock_ingest_instance
             mock_ingest.assert_called_once_with(
-                embed_component=mock_embed_comp,
-                vector_store=mock_vector_store
+                embed_component=mock_embed_comp, vector_store=mock_vector_store
             )
 
-    @patch('locus.mcp.di.container.Settings')
+    @patch("locus.mcp.di.container.Settings")
     def test_code_search_engine_creation(self, mock_settings):
         """Test code search engine creation."""
         mock_settings_instance = Mock()
         mock_settings.return_value = mock_settings_instance
 
-        with patch('locus.search.engine.HybridSearchEngine') as mock_engine, \
-             patch.object(get_container(), 'embedding_component') as mock_embed_method, \
-             patch.object(get_container(), 'vector_store') as mock_store_method:
-
+        with patch(
+            "locus.search.engine.HybridSearchEngine"
+        ) as mock_engine, patch.object(
+            get_container(), "embedding_component"
+        ) as mock_embed_method, patch.object(
+            get_container(), "vector_store"
+        ) as mock_store_method:
             mock_engine_instance = Mock()
             mock_engine.return_value = mock_engine_instance
 
@@ -131,15 +142,16 @@ class TestDIContainer:
 
             assert search_engine is mock_engine_instance
             mock_engine.assert_called_once_with(
-                embedding_component=mock_embed_comp,
-                vector_store=mock_vector_store
+                embedding_component=mock_embed_comp, vector_store=mock_vector_store
             )
 
     def test_component_caching(self):
         """Test that components are cached and reused."""
         container = get_container()
 
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+        ) as mock_embedding:
             mock_embedding_instance = Mock()
             mock_embedding.return_value = mock_embedding_instance
 
@@ -159,38 +171,44 @@ class TestDIContainer:
         call_order = []
 
         def mock_embedding_constructor(*args, **kwargs):
-            call_order.append('embedding')
+            call_order.append("embedding")
             return Mock()
 
         def mock_vector_store_constructor(*args, **kwargs):
-            call_order.append('vector_store')
+            call_order.append("vector_store")
             return Mock()
 
         def mock_ingest_constructor(*args, **kwargs):
-            call_order.append('ingest')
+            call_order.append("ingest")
             return Mock()
 
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent', side_effect=mock_embedding_constructor), \
-             patch('locus.mcp.components.vector_store.lancedb_store.LanceDBVectorStore', side_effect=mock_vector_store_constructor), \
-             patch('locus.mcp.components.ingest.code_ingest_component.CodeIngestComponent', side_effect=mock_ingest_constructor):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent",
+            side_effect=mock_embedding_constructor,
+        ), patch(
+            "locus.mcp.components.vector_store.lancedb_store.LanceDBVectorStore",
+            side_effect=mock_vector_store_constructor,
+        ), patch(
+            "locus.mcp.components.ingest.code_ingest_component.CodeIngestComponent",
+            side_effect=mock_ingest_constructor,
+        ):
             # Request ingest component, which depends on others
             container.ingest_component()
 
             # Dependencies should be created before dependents
-            assert 'embedding' in call_order
-            assert 'vector_store' in call_order
-            assert 'ingest' in call_order
+            assert "embedding" in call_order
+            assert "vector_store" in call_order
+            assert "ingest" in call_order
 
             # Ingest should be created after its dependencies
-            ingest_index = call_order.index('ingest')
-            embedding_index = call_order.index('embedding')
-            vector_store_index = call_order.index('vector_store')
+            ingest_index = call_order.index("ingest")
+            embedding_index = call_order.index("embedding")
+            vector_store_index = call_order.index("vector_store")
 
             assert embedding_index < ingest_index
             assert vector_store_index < ingest_index
 
-    @patch('locus.mcp.di.container.Settings')
+    @patch("locus.mcp.di.container.Settings")
     def test_settings_loading(self, mock_settings):
         """Test that settings are loaded correctly."""
         mock_settings_instance = Mock()
@@ -217,7 +235,9 @@ class TestDIContainer:
         assert container1 is container2
 
         # But let's test that they could work independently
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+        ) as mock_embedding:
             mock_embedding.return_value = Mock()
 
             comp1 = container1.embedding_component()
@@ -230,11 +250,14 @@ class TestDIContainer:
         """Test error handling when component creation fails."""
         container = get_container()
 
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent', side_effect=Exception("Component creation failed")):
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent",
+            side_effect=Exception("Component creation failed"),
+        ):
             with pytest.raises(Exception, match="Component creation failed"):
                 container.embedding_component()
 
-    @patch('locus.mcp.di.container.Settings')
+    @patch("locus.mcp.di.container.Settings")
     def test_unsupported_provider_handling(self, mock_settings):
         """Test handling of unsupported providers in settings."""
         mock_settings_instance = Mock()
@@ -264,7 +287,9 @@ class TestDIContainer:
                 container = get_container()
                 # Add small delay to increase chance of race conditions
                 time.sleep(0.001)
-                with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding:
+                with patch(
+                    "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+                ) as mock_embedding:
                     mock_embedding.return_value = Mock()
                     comp = container.embedding_component()
                     results.append(comp)
@@ -299,11 +324,15 @@ class TestContainerIntegration:
 
     def test_full_component_chain(self):
         """Test that the full component chain can be created."""
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding, \
-             patch('locus.mcp.components.vector_store.lancedb_store.LanceDBVectorStore') as mock_vector_store, \
-             patch('locus.mcp.components.ingest.code_ingest_component.CodeIngestComponent') as mock_ingest, \
-             patch('locus.search.engine.HybridSearchEngine') as mock_search:
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+        ) as mock_embedding, patch(
+            "locus.mcp.components.vector_store.lancedb_store.LanceDBVectorStore"
+        ) as mock_vector_store, patch(
+            "locus.mcp.components.ingest.code_ingest_component.CodeIngestComponent"
+        ) as mock_ingest, patch(
+            "locus.search.engine.HybridSearchEngine"
+        ) as mock_search:
             # Setup mocks
             mock_embedding.return_value = Mock()
             mock_vector_store.return_value = Mock()
@@ -326,12 +355,10 @@ class TestContainerIntegration:
 
             # Verify dependencies were passed correctly
             mock_ingest.assert_called_with(
-                embed_component=embedding,
-                vector_store=vector_store
+                embed_component=embedding, vector_store=vector_store
             )
             mock_search.assert_called_with(
-                embedding_component=embedding,
-                vector_store=vector_store
+                embedding_component=embedding, vector_store=vector_store
             )
 
     def test_container_with_real_settings(self):
@@ -340,21 +367,24 @@ class TestContainerIntegration:
         container = get_container()
 
         # Should be able to access settings
-        assert hasattr(container, 'settings')
+        assert hasattr(container, "settings")
         assert container.settings is not None
 
         # Settings should have expected structure
         settings = container.settings
-        assert hasattr(settings, 'embedding')
-        assert hasattr(settings, 'vector_store')
-        assert hasattr(settings, 'index')
+        assert hasattr(settings, "embedding")
+        assert hasattr(settings, "vector_store")
+        assert hasattr(settings, "index")
 
     def test_container_error_propagation(self):
         """Test that errors in dependencies propagate correctly."""
         container = get_container()
 
         # If embedding component fails, ingest should also fail
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent', side_effect=ImportError("Missing dependency")):
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent",
+            side_effect=ImportError("Missing dependency"),
+        ):
             with pytest.raises(ImportError, match="Missing dependency"):
                 container.ingest_component()
 
@@ -363,14 +393,18 @@ class TestContainerIntegration:
         # Get initial container
         container1 = get_container()
 
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+        ) as mock_embedding:
             mock_embedding.return_value = Mock()
             comp1 = container1.embedding_component()
 
         # Get container again (should be same instance)
         container2 = get_container()
 
-        with patch('locus.mcp.components.embedding.embedding_component.EmbeddingComponent') as mock_embedding2:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.EmbeddingComponent"
+        ) as mock_embedding2:
             mock_embedding2.return_value = Mock()
             comp2 = container2.embedding_component()
 

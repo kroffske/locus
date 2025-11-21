@@ -1,6 +1,5 @@
 """Tests for updater functionality."""
 
-
 from locus.updater.parser import _sanitize_markdown_backticks, parse_markdown_to_updates
 
 

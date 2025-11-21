@@ -1,4 +1,5 @@
 """MCP-specific test fixtures and configuration."""
+
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
@@ -65,7 +66,7 @@ This is a test project for MCP functionality.
 @pytest.fixture
 def mock_sentence_transformers():
     """Mock SentenceTransformers to avoid requiring actual model."""
-    with patch('sentence_transformers.SentenceTransformer') as mock_model:
+    with patch("sentence_transformers.SentenceTransformer") as mock_model:
         mock_instance = MagicMock()
         mock_instance.encode.return_value = [[0.1, 0.2, 0.3] for _ in range(10)]
         mock_model.return_value = mock_instance
@@ -75,7 +76,7 @@ def mock_sentence_transformers():
 @pytest.fixture
 def mock_lancedb():
     """Mock LanceDB to avoid requiring actual database."""
-    with patch('lancedb.connect') as mock_connect:
+    with patch("lancedb.connect") as mock_connect:
         mock_db = MagicMock()
         mock_table = MagicMock()
         mock_table.search.return_value.limit.return_value.where.return_value.to_list.return_value = []
@@ -90,7 +91,7 @@ def mock_lancedb():
 @pytest.fixture
 def mock_fastmcp():
     """Mock FastMCP to avoid requiring actual MCP server."""
-    with patch('fastmcp.FastMCP') as mock_mcp:
+    with patch("fastmcp.FastMCP") as mock_mcp:
         mock_instance = MagicMock()
         mock_instance.tool.return_value = lambda func: func  # Decorator passthrough
         mock_instance.run_stdio.return_value = None
@@ -163,20 +164,13 @@ def temp_db_path(tmp_path):
 def mock_settings():
     """Mock settings for testing."""
     settings = {
-        'embedding': {
-            'provider': 'huggingface',
-            'model_name': 'test-model',
-            'trust_remote_code': True,
-            'batch_size': 32
+        "embedding": {
+            "provider": "huggingface",
+            "model_name": "test-model",
+            "trust_remote_code": True,
+            "batch_size": 32,
         },
-        'vector_store': {
-            'provider': 'lancedb',
-            'db_path': '/tmp/test_db'
-        },
-        'index': {
-            'chunking_strategy': 'lines',
-            'max_lines': 150,
-            'overlap': 25
-        }
+        "vector_store": {"provider": "lancedb", "db_path": "/tmp/test_db"},
+        "index": {"chunking_strategy": "lines", "max_lines": 150, "overlap": 25},
     }
     return settings

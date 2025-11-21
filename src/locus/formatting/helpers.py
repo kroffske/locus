@@ -33,7 +33,9 @@ def _extract_first_sentence(text: str) -> str:
     if not text:
         return ""
     # Take first non-empty line to avoid multi-line spillover in tree
-    first_line = next((ln.strip() for ln in text.splitlines() if ln.strip()), "").strip()
+    first_line = next(
+        (ln.strip() for ln in text.splitlines() if ln.strip()), ""
+    ).strip()
     if not first_line:
         return ""
     sentence = first_line.split(".")[0].strip()
@@ -74,7 +76,9 @@ def get_output_content(
             except re.error:
                 annotation_re = None
         if annotation_re and annotation_re.search(rel_path) and analysis.annotations:
-            content_to_use = format_annotations_as_py_stub(rel_path, analysis.annotations)
+            content_to_use = format_annotations_as_py_stub(
+                rel_path, analysis.annotations
+            )
             mode = "annotation_stub"
 
     source_header = f"# source: {analysis.file_info.relative_path}"
@@ -84,7 +88,9 @@ def get_output_content(
     return content_to_use, mode
 
 
-def format_annotations_as_py_stub(relative_path: str, annotations: AnnotationInfo) -> str:
+def format_annotations_as_py_stub(
+    relative_path: str, annotations: AnnotationInfo
+) -> str:
     """Formats annotations into a Python stub file string."""
     lines = []
     if annotations.module_docstring:
@@ -117,7 +123,9 @@ def format_annotations_as_py_stub(relative_path: str, annotations: AnnotationInf
 
             # Add methods
             for m_name, m_details in sorted(details.get("methods", {}).items()):
-                lines.append(f"    {m_details.get('signature', f'def {m_name}(...):')} ...")
+                lines.append(
+                    f"    {m_details.get('signature', f'def {m_name}(...):')} ..."
+                )
 
             # Only add ... if empty
             if not attributes and not details.get("methods"):
@@ -127,7 +135,9 @@ def format_annotations_as_py_stub(relative_path: str, annotations: AnnotationInf
     return "\n".join(lines)
 
 
-def _slice_content_by_ranges(content_with_header: str, ranges: List[Tuple[int, int]]) -> str:
+def _slice_content_by_ranges(
+    content_with_header: str, ranges: List[Tuple[int, int]]
+) -> str:
     """Returns content with only the lines in the provided 1-based inclusive ranges.
 
     Expects content_with_header to start with a '# source:' header line; preserves it.

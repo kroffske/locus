@@ -18,7 +18,9 @@ def get_file_context(
     try:
         from mcp import TextContent
     except ImportError:
-        raise ImportError("MCP types not found. Please install with: pip install 'locus-analyzer[mcp]'")
+        raise ImportError(
+            "MCP types not found. Please install with: pip install 'locus-analyzer[mcp]'"
+        )
 
     # Security: Validate path within repo root
     repo_root = os.getcwd()

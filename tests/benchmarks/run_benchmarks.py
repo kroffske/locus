@@ -50,8 +50,13 @@ class CaseSpec:
 
 def load_case_meta(meta_path: Path) -> CaseSpec:
     data = yaml.safe_load(meta_path.read_text(encoding="utf-8"))
-    members = {m["label"]: (m["file"], m.get("qualname", "")) for m in data.get("members", [])}
-    pairs = [(p["left"], p["right"], p.get("relation", "similar")) for p in data.get("pairs", [])]
+    members = {
+        m["label"]: (m["file"], m.get("qualname", "")) for m in data.get("members", [])
+    }
+    pairs = [
+        (p["left"], p["right"], p.get("relation", "similar"))
+        for p in data.get("pairs", [])
+    ]
     expected = data.get("expected", {})
     return CaseSpec(
         root=meta_path.parent,
@@ -122,7 +127,9 @@ def run_case_with_strategy(case: CaseSpec, strat: str) -> Tuple[str, str, Dict]:
             elif relation == "negative":
                 neg_fp += 1
             continue
-        same = cluster_of.get(lid) is not None and cluster_of.get(lid) == cluster_of.get(rid)
+        same = cluster_of.get(lid) is not None and cluster_of.get(
+            lid
+        ) == cluster_of.get(rid)
         if relation in {"duplicate", "similar"}:
             if same:
                 pos_detected += 1
@@ -154,10 +161,21 @@ def run_case_with_strategy(case: CaseSpec, strat: str) -> Tuple[str, str, Dict]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Run similarity benchmark cases and summarize results")
-    ap.add_argument("--strategy", choices=["exact", "ast", "all"], default="all", help="Which strategy to evaluate against all cases")
+    ap = argparse.ArgumentParser(
+        description="Run similarity benchmark cases and summarize results"
+    )
+    ap.add_argument(
+        "--strategy",
+        choices=["exact", "ast", "all"],
+        default="all",
+        help="Which strategy to evaluate against all cases",
+    )
     ap.add_argument("--json-out", help="Optional path to write JSON summary")
-    ap.add_argument("--include-init", action="store_true", help="Include __init__ methods in similarity (default: excluded)")
+    ap.add_argument(
+        "--include-init",
+        action="store_true",
+        help="Include __init__ methods in similarity (default: excluded)",
+    )
     args = ap.parse_args()
     base = Path(__file__).parent / "cases"
     metas = sorted(base.glob("case-*/meta.yaml"))
@@ -193,7 +211,9 @@ def main() -> int:
             metrics["missing_pairs"] += det["missing_pairs"]
             metrics["cases_pass"] += 1 if status == "PASS" else 0
             metrics["cases_fail"] += 1 if status == "FAIL" else 0
-            grand_json[strat]["cases"].append({"case": case.id, "status": status, "message": msg, **det})
+            grand_json[strat]["cases"].append(
+                {"case": case.id, "status": status, "message": msg, **det}
+            )
         print("-" * 60)
         print(
             "Summary:"
@@ -207,7 +227,9 @@ def main() -> int:
             overall_exit = 1
     if args.json_out:
         Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
-        Path(args.json_out).write_text(json.dumps(grand_json, ensure_ascii=False, indent=2), encoding="utf-8")
+        Path(args.json_out).write_text(
+            json.dumps(grand_json, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         print(f"Wrote JSON summary to {args.json_out}")
     return overall_exit
 

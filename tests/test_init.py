@@ -102,7 +102,11 @@ class TestCreatorLogic:
     def test_check_existing_files_some_exist(self, tmp_path: Path):
         """Test checking for existing files when some exist."""
         (tmp_path / "CLAUDE.md").write_text("existing content")
-        template_files = {"CLAUDE.md": "claude", "TESTS.md": "tests", "SESSION.md": "session"}
+        template_files = {
+            "CLAUDE.md": "claude",
+            "TESTS.md": "tests",
+            "SESSION.md": "session",
+        }
 
         existing = check_existing_files(tmp_path, template_files)
         assert existing == {"CLAUDE.md"}
@@ -169,7 +173,9 @@ class TestCreatorLogic:
         substitutions = {"project_name": "test_project"}
         files_to_create = {"AGENTS.md", "TESTS.md"}
 
-        created = create_template_files(tmp_path, template_files, substitutions, files_to_create)
+        created = create_template_files(
+            tmp_path, template_files, substitutions, files_to_create
+        )
 
         assert set(created) == {"AGENTS.md", "TESTS.md"}
         assert (tmp_path / "AGENTS.md").exists()
@@ -180,10 +186,16 @@ class TestCreatorLogic:
 
     def test_create_template_files_subset(self, tmp_path: Path):
         """Test creating only a subset of template files."""
-        template_files = {"AGENTS.md": "agents", "TESTS.md": "tests", "SESSION.md": "session"}
+        template_files = {
+            "AGENTS.md": "agents",
+            "TESTS.md": "tests",
+            "SESSION.md": "session",
+        }
         files_to_create = {"AGENTS.md", "SESSION.md"}
 
-        created = create_template_files(tmp_path, template_files, files_to_create=files_to_create)
+        created = create_template_files(
+            tmp_path, template_files, files_to_create=files_to_create
+        )
 
         assert set(created) == {"AGENTS.md", "SESSION.md"}
         assert (tmp_path / "AGENTS.md").exists()
@@ -195,7 +207,9 @@ class TestCreatorLogic:
         template_files = {"AGENTS.md": "agents"}
         files_to_create = {"AGENTS.md", "UNKNOWN.md"}
 
-        created = create_template_files(tmp_path, template_files, files_to_create=files_to_create)
+        created = create_template_files(
+            tmp_path, template_files, files_to_create=files_to_create
+        )
 
         # Should create known file and skip unknown
         assert created == ["AGENTS.md"]
@@ -210,7 +224,9 @@ class TestCreatorLogic:
         files_to_create = {"AGENTS.md"}
 
         with pytest.raises(InitError, match="Failed to create AGENTS.md"):
-            create_template_files(tmp_path, template_files, files_to_create=files_to_create)
+            create_template_files(
+                tmp_path, template_files, files_to_create=files_to_create
+            )
 
 
 class TestInitProject:
@@ -220,11 +236,31 @@ class TestInitProject:
         """Test successful initialization in empty directory."""
         created = init_project(target_dir=tmp_path, project_name="test_project")
 
-        expected_files = {"AGENTS.md", "ARCHITECTURE.md", "DEEPDIVE_PROMTING.md", ".mcp.json", "README.md", "SESSION.md", "TESTS.md", "TODO.md", "CLAUDE.md (symlink)"}
+        expected_files = {
+            "AGENTS.md",
+            "ARCHITECTURE.md",
+            "DEEPDIVE_PROMTING.md",
+            ".mcp.json",
+            "README.md",
+            "SESSION.md",
+            "TESTS.md",
+            "TODO.md",
+            "CLAUDE.md (symlink)",
+        }
         assert set(created) == expected_files
 
         # Check physical files exist (excluding symlink notation)
-        physical_files = {"AGENTS.md", "ARCHITECTURE.md", "DEEPDIVE_PROMTING.md", ".mcp.json", "README.md", "SESSION.md", "TESTS.md", "TODO.md", "CLAUDE.md"}
+        physical_files = {
+            "AGENTS.md",
+            "ARCHITECTURE.md",
+            "DEEPDIVE_PROMTING.md",
+            ".mcp.json",
+            "README.md",
+            "SESSION.md",
+            "TESTS.md",
+            "TODO.md",
+            "CLAUDE.md",
+        }
         for filename in physical_files:
             assert (tmp_path / filename).exists()
 
@@ -245,7 +281,9 @@ class TestInitProject:
         # Create existing file with different content
         (tmp_path / "AGENTS.md").write_text("old content")
 
-        created = init_project(target_dir=tmp_path, force=True, project_name="test_project")
+        created = init_project(
+            target_dir=tmp_path, force=True, project_name="test_project"
+        )
 
         assert "AGENTS.md" in created
         assert "CLAUDE.md (symlink)" in created
@@ -255,7 +293,9 @@ class TestInitProject:
 
     @patch("locus.init.creator.prompt_user_for_overwrite", return_value=True)
     @patch("locus.init.creator.create_claude_symlink", return_value=True)
-    def test_init_project_user_confirms_overwrite(self, mock_symlink, mock_prompt, tmp_path: Path):
+    def test_init_project_user_confirms_overwrite(
+        self, mock_symlink, mock_prompt, tmp_path: Path
+    ):
         """Test non-interactive mode with user confirming overwrite."""
         (tmp_path / "AGENTS.md").write_text("existing")
 
@@ -275,7 +315,9 @@ class TestInitProject:
 
     @patch("locus.init.creator.prompt_user_for_each_file")
     @patch("locus.init.creator.create_claude_symlink", return_value=True)
-    def test_init_project_interactive_mode(self, mock_symlink, mock_prompt, tmp_path: Path):
+    def test_init_project_interactive_mode(
+        self, mock_symlink, mock_prompt, tmp_path: Path
+    ):
         """Test interactive mode with individual file prompts."""
         (tmp_path / "AGENTS.md").write_text("existing")
         (tmp_path / "TESTS.md").write_text("existing")
@@ -287,7 +329,16 @@ class TestInitProject:
 
         # Should create AGENTS.md (overwrite), and new files, plus symlink
         # Should NOT recreate TESTS.md (user said no)
-        expected_created = {"AGENTS.md", "ARCHITECTURE.md", "DEEPDIVE_PROMTING.md", ".mcp.json", "README.md", "SESSION.md", "TODO.md", "CLAUDE.md (symlink)"}
+        expected_created = {
+            "AGENTS.md",
+            "ARCHITECTURE.md",
+            "DEEPDIVE_PROMTING.md",
+            ".mcp.json",
+            "README.md",
+            "SESSION.md",
+            "TODO.md",
+            "CLAUDE.md (symlink)",
+        }
         assert set(created) == expected_created
 
         mock_prompt.assert_called_once_with({"AGENTS.md", "TESTS.md"})

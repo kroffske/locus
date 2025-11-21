@@ -20,9 +20,15 @@ class _Canonicalize(ast.NodeTransformer):
         node.args = self.visit(node.args)  # type: ignore[assignment]
         # Drop docstring if present
         body = list(node.body)
-        if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), (ast.Str, ast.Constant)):
+        if (
+            body
+            and isinstance(body[0], ast.Expr)
+            and isinstance(getattr(body[0], "value", None), (ast.Str, ast.Constant))
+        ):
             val = body[0].value
-            if isinstance(val, ast.Str) or (isinstance(val, ast.Constant) and isinstance(val.value, str)):
+            if isinstance(val, ast.Str) or (
+                isinstance(val, ast.Constant) and isinstance(val.value, str)
+            ):
                 body = body[1:]
         node.body = [self.visit(b) for b in body]
         return node

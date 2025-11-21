@@ -78,4 +78,6 @@ def _chunk_semantic(content: str) -> List[Chunk]:
             line = end_line + 1
         return chunks
     except Exception:
-        raise ValueError("Semantic chunking requires additional dependencies or configuration.")
+        raise ValueError(
+            "Semantic chunking requires additional dependencies or configuration."
+        )

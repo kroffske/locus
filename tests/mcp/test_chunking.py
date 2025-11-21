@@ -1,6 +1,12 @@
 """Tests for chunking functionality."""
+
 import pytest
-from locus.mcp.components.ingest.chunking import chunk_file, _chunk_lines, _chunk_semantic, Chunk
+from locus.mcp.components.ingest.chunking import (
+    chunk_file,
+    _chunk_lines,
+    _chunk_semantic,
+    Chunk,
+)
 
 
 class TestChunk:
@@ -13,7 +19,7 @@ class TestChunk:
             text="sample text",
             start=1,
             end=5,
-            symbols=["func1", "class1"]
+            symbols=["func1", "class1"],
         )
         assert chunk.id == "test-id"
         assert chunk.text == "sample text"
@@ -23,12 +29,7 @@ class TestChunk:
 
     def test_chunk_optional_symbols(self):
         """Test creating a chunk without symbols."""
-        chunk = Chunk(
-            id="test-id",
-            text="sample text",
-            start=1,
-            end=5
-        )
+        chunk = Chunk(id="test-id", text="sample text", start=1, end=5)
         assert chunk.symbols is None
 
 
@@ -37,7 +38,9 @@ class TestChunkFile:
 
     def test_lines_strategy(self, sample_code_content):
         """Test chunking with lines strategy."""
-        chunks = chunk_file(sample_code_content, strategy="lines", line_window=10, overlap=2)
+        chunks = chunk_file(
+            sample_code_content, strategy="lines", line_window=10, overlap=2
+        )
 
         assert len(chunks) > 0
         assert all(isinstance(chunk, Chunk) for chunk in chunks)
@@ -254,18 +257,12 @@ class TestChunkFileIntegration:
         """Test that parameters are correctly forwarded to strategy functions."""
         # Test with small window to force multiple chunks
         chunks_small = chunk_file(
-            sample_code_content,
-            strategy="lines",
-            line_window=5,
-            overlap=1
+            sample_code_content, strategy="lines", line_window=5, overlap=1
         )
 
         # Test with large window
         chunks_large = chunk_file(
-            sample_code_content,
-            strategy="lines",
-            line_window=100,
-            overlap=1
+            sample_code_content, strategy="lines", line_window=100, overlap=1
         )
 
         # Small window should create more chunks

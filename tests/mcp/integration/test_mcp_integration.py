@@ -1,4 +1,5 @@
 """Integration tests for the complete MCP system."""
+
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
@@ -9,13 +10,16 @@ class TestMCPFullWorkflow:
     """Test complete MCP workflow from indexing to search."""
 
     @pytest.mark.asyncio
-    async def test_complete_indexing_and_search_workflow(self, temp_project, mock_sentence_transformers, mock_lancedb):
+    async def test_complete_indexing_and_search_workflow(
+        self, temp_project, mock_sentence_transformers, mock_lancedb
+    ):
         """Test the complete workflow: index files -> search -> retrieve context."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             # Setup embeddings mock to return consistent vectors
             mock_sentence_transformers.encode.return_value.tolist.return_value = [
                 [0.1, 0.2, 0.3, 0.4],  # For first chunk
@@ -31,12 +35,12 @@ class TestMCPFullWorkflow:
             mock_search_result = MagicMock()
             mock_search_result.limit.return_value.to_list.return_value = [
                 {
-                    'chunk_id': 'test-chunk-1',
-                    'rel_path': 'src/main.py',
-                    'text': 'def hello_world():\n    return "Hello, World!"',
-                    'start_line': 1,
-                    'end_line': 2,
-                    '_distance': 0.1
+                    "chunk_id": "test-chunk-1",
+                    "rel_path": "src/main.py",
+                    "text": 'def hello_world():\n    return "Hello, World!"',
+                    "start_line": 1,
+                    "end_line": 2,
+                    "_distance": 0.1,
                 }
             ]
             mock_table.search.return_value = mock_search_result
@@ -47,8 +51,8 @@ class TestMCPFullWorkflow:
             ingest_component = container.ingest_component()
             index_results = await ingest_component.index_paths([str(temp_project)])
 
-            assert index_results['files'] > 0
-            assert index_results['chunks'] > 0
+            assert index_results["files"] > 0
+            assert index_results["chunks"] > 0
 
             # Verify indexing called the right components
             mock_sentence_transformers.encode.assert_called()
@@ -59,27 +63,32 @@ class TestMCPFullWorkflow:
             search_results = search_engine.search("hello function", k=5)
 
             assert len(search_results) > 0
-            assert search_results[0]['rel_path'] == 'src/main.py'
+            assert search_results[0]["rel_path"] == "src/main.py"
 
             # Verify search used embeddings and vector store
             mock_table.search.assert_called()
 
     @pytest.mark.asyncio
-    async def test_mcp_server_tools_integration(self, temp_project, mock_sentence_transformers, mock_lancedb, mock_fastmcp):
+    async def test_mcp_server_tools_integration(
+        self, temp_project, mock_sentence_transformers, mock_lancedb, mock_fastmcp
+    ):
         """Test integration of MCP server tools."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'), \
-             patch('fastmcp.FastMCP', return_value=mock_fastmcp), \
-             patch('os.getcwd', return_value=str(temp_project)):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"), patch(
+            "fastmcp.FastMCP", return_value=mock_fastmcp
+        ), patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.index_control import index_paths
             from locus.mcp.server.tools.search_codebase import search_codebase
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             # Setup mocks
-            mock_sentence_transformers.encode.return_value.tolist.return_value = [[0.1, 0.2, 0.3]]
+            mock_sentence_transformers.encode.return_value.tolist.return_value = [
+                [0.1, 0.2, 0.3]
+            ]
             mock_table = MagicMock()
             mock_lancedb.create_table.return_value = mock_table
             mock_lancedb.open_table.return_value = mock_table
@@ -88,12 +97,12 @@ class TestMCPFullWorkflow:
             mock_search_result = MagicMock()
             mock_search_result.limit.return_value.to_list.return_value = [
                 {
-                    'chunk_id': 'test-chunk',
-                    'rel_path': 'src/main.py',
-                    'text': 'def hello_world(): pass',
-                    'start_line': 1,
-                    'end_line': 1,
-                    '_distance': 0.05
+                    "chunk_id": "test-chunk",
+                    "rel_path": "src/main.py",
+                    "text": "def hello_world(): pass",
+                    "start_line": 1,
+                    "end_line": 1,
+                    "_distance": 0.05,
                 }
             ]
             mock_table.search.return_value = mock_search_result
@@ -108,14 +117,16 @@ class TestMCPFullWorkflow:
             assert len(search_results) > 0
 
             # 3. Test file context tool
-            with patch('locus.mcp.server.tools.get_file_context.analyze') as mock_analyze:
+            with patch(
+                "locus.mcp.server.tools.get_file_context.analyze"
+            ) as mock_analyze:
                 mock_analyze.return_value = [{"text": "File content"}]
                 context_results = get_file_context("src/main.py")
                 assert len(context_results) > 0
 
     def test_mcp_app_creation_and_registration(self, mock_fastmcp):
         """Test that MCP app is created and tools are registered correctly."""
-        with patch('fastmcp.FastMCP', return_value=mock_fastmcp):
+        with patch("fastmcp.FastMCP", return_value=mock_fastmcp):
             from locus.mcp.server.mcp_app import get_mcp_app
 
             app = get_mcp_app()
@@ -127,15 +138,20 @@ class TestMCPFullWorkflow:
             assert mock_fastmcp.tool.call_count >= 3  # At least 3 tools registered
 
     @pytest.mark.asyncio
-    async def test_concurrent_operations(self, temp_project, mock_sentence_transformers, mock_lancedb):
+    async def test_concurrent_operations(
+        self, temp_project, mock_sentence_transformers, mock_lancedb
+    ):
         """Test that concurrent MCP operations work correctly."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             # Setup mocks
-            mock_sentence_transformers.encode.return_value.tolist.return_value = [[0.1, 0.2, 0.3]]
+            mock_sentence_transformers.encode.return_value.tolist.return_value = [
+                [0.1, 0.2, 0.3]
+            ]
             mock_table = MagicMock()
             mock_lancedb.create_table.return_value = mock_table
             mock_lancedb.open_table.return_value = mock_table
@@ -156,32 +172,38 @@ class TestMCPFullWorkflow:
             assert len(results) == 3
             for result in results:
                 assert not isinstance(result, Exception)
-                assert result['files'] >= 0
+                assert result["files"] >= 0
 
     def test_error_handling_integration(self, temp_project):
         """Test error handling across the entire MCP system."""
         # Test with missing dependencies
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', side_effect=ImportError("Missing package")):
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            side_effect=ImportError("Missing package"),
+        ):
             container = get_container()
 
             with pytest.raises(ImportError, match="Missing package"):
                 container.embedding_component()
 
         # Test with vector store errors
-        with patch('lancedb.connect', side_effect=Exception("DB connection failed")):
+        with patch("lancedb.connect", side_effect=Exception("DB connection failed")):
             container = get_container()
 
             with pytest.raises(Exception, match="DB connection failed"):
                 container.vector_store()
 
     @pytest.mark.asyncio
-    async def test_large_project_indexing(self, temp_project, mock_sentence_transformers, mock_lancedb):
+    async def test_large_project_indexing(
+        self, temp_project, mock_sentence_transformers, mock_lancedb
+    ):
         """Test indexing a project with many files."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             # Create many test files
             src_dir = temp_project / "large_src"
             src_dir.mkdir()
@@ -200,7 +222,8 @@ class Class_{i}:
 
             # Mock embeddings for many chunks
             mock_sentence_transformers.encode.return_value.tolist.return_value = [
-                [float(i) / 100, float(i+1) / 100, float(i+2) / 100] for i in range(200)
+                [float(i) / 100, float(i + 1) / 100, float(i + 2) / 100]
+                for i in range(200)
             ]
 
             mock_table = MagicMock()
@@ -214,8 +237,8 @@ class Class_{i}:
             results = await ingest_component.index_paths([str(temp_project)])
 
             # Should handle many files
-            assert results['files'] >= 50
-            assert results['chunks'] > 100
+            assert results["files"] >= 50
+            assert results["chunks"] > 100
 
     def test_configuration_integration(self):
         """Test that configuration is properly integrated across components."""
@@ -223,9 +246,9 @@ class Class_{i}:
         settings = container.settings
 
         # Verify settings structure
-        assert hasattr(settings, 'embedding')
-        assert hasattr(settings, 'vector_store')
-        assert hasattr(settings, 'index')
+        assert hasattr(settings, "embedding")
+        assert hasattr(settings, "vector_store")
+        assert hasattr(settings, "index")
 
         # Verify default values
         assert settings.embedding.provider == "huggingface"
@@ -233,19 +256,27 @@ class Class_{i}:
         assert settings.index.chunking_strategy in ["lines", "semantic"]
 
     @pytest.mark.asyncio
-    async def test_chunking_strategy_integration(self, temp_project, sample_code_content, mock_sentence_transformers, mock_lancedb):
+    async def test_chunking_strategy_integration(
+        self,
+        temp_project,
+        sample_code_content,
+        mock_sentence_transformers,
+        mock_lancedb,
+    ):
         """Test different chunking strategies in the full workflow."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             # Create a file with known content
             test_file = temp_project / "test_chunking.py"
             test_file.write_text(sample_code_content)
 
             mock_sentence_transformers.encode.return_value.tolist.return_value = [
-                [0.1, 0.2, 0.3] for _ in range(10)  # Embeddings for chunks
+                [0.1, 0.2, 0.3]
+                for _ in range(10)  # Embeddings for chunks
             ]
 
             mock_table = MagicMock()
@@ -257,7 +288,7 @@ class Class_{i}:
 
             # Test with lines strategy (default)
             results_lines = await ingest_component.index_paths([str(temp_project)])
-            lines_chunks = results_lines['chunks']
+            lines_chunks = results_lines["chunks"]
 
             # Test with semantic strategy
             # (Note: This would require modifying settings or passing strategy parameter)
@@ -266,7 +297,7 @@ class Class_{i}:
 
     def test_security_features_integration(self, temp_project):
         """Test security features across the MCP system."""
-        with patch('os.getcwd', return_value=str(temp_project)):
+        with patch("os.getcwd", return_value=str(temp_project)):
             from locus.mcp.server.tools.get_file_context import get_file_context
 
             # Test path traversal protection
@@ -274,7 +305,7 @@ class Class_{i}:
                 "../../etc/passwd",
                 "../../../sensitive_file",
                 "/etc/shadow",
-                "C:\\Windows\\System32\\config"
+                "C:\\Windows\\System32\\config",
             ]
 
             for path in dangerous_paths:
@@ -283,17 +314,22 @@ class Class_{i}:
                 assert "Error: Invalid path" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_performance_characteristics(self, temp_project, mock_sentence_transformers, mock_lancedb):
+    async def test_performance_characteristics(
+        self, temp_project, mock_sentence_transformers, mock_lancedb
+    ):
         """Test performance characteristics of the MCP system."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             import time
 
             # Setup mocks
-            mock_sentence_transformers.encode.return_value.tolist.return_value = [[0.1, 0.2, 0.3]]
+            mock_sentence_transformers.encode.return_value.tolist.return_value = [
+                [0.1, 0.2, 0.3]
+            ]
             mock_table = MagicMock()
             mock_lancedb.create_table.return_value = mock_table
             mock_lancedb.open_table.return_value = mock_table
@@ -344,13 +380,16 @@ class TestMCPSystemResilience:
     """Test system resilience and recovery."""
 
     @pytest.mark.asyncio
-    async def test_partial_failure_recovery(self, temp_project, mock_sentence_transformers, mock_lancedb):
+    async def test_partial_failure_recovery(
+        self, temp_project, mock_sentence_transformers, mock_lancedb
+    ):
         """Test system recovery from partial failures."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             # Create some files, make one fail
             failing_file = temp_project / "failing.py"
             failing_file.write_text("# This file will cause issues")
@@ -363,7 +402,9 @@ class TestMCPSystemResilience:
                     raise PermissionError("Access denied")
                 return original_open(path, *args, **kwargs)
 
-            mock_sentence_transformers.encode.return_value.tolist.return_value = [[0.1, 0.2, 0.3]]
+            mock_sentence_transformers.encode.return_value.tolist.return_value = [
+                [0.1, 0.2, 0.3]
+            ]
             mock_table = MagicMock()
             mock_lancedb.create_table.return_value = mock_table
             mock_lancedb.open_table.return_value = mock_table
@@ -371,17 +412,20 @@ class TestMCPSystemResilience:
             container = get_container()
             ingest_component = container.ingest_component()
 
-            with patch('builtins.open', side_effect=mock_open):
+            with patch("builtins.open", side_effect=mock_open):
                 # Should still process other files despite one failing
                 results = await ingest_component.index_paths([str(temp_project)])
 
                 # Should have processed some files (the good ones)
-                assert results['files'] > 0
+                assert results["files"] > 0
 
     def test_graceful_degradation(self, temp_project):
         """Test graceful degradation when optional features fail."""
         # Test what happens when search engine fails but other components work
-        with patch('locus.search.engine.HybridSearchEngine', side_effect=Exception("Search engine failed")):
+        with patch(
+            "locus.search.engine.HybridSearchEngine",
+            side_effect=Exception("Search engine failed"),
+        ):
             container = get_container()
 
             # Other components should still work
@@ -395,13 +439,16 @@ class TestMCPSystemResilience:
             with pytest.raises(Exception, match="Search engine failed"):
                 container.code_search_engine()
 
-    def test_resource_cleanup(self, temp_project, mock_sentence_transformers, mock_lancedb):
+    def test_resource_cleanup(
+        self, temp_project, mock_sentence_transformers, mock_lancedb
+    ):
         """Test that resources are properly cleaned up."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', return_value=mock_sentence_transformers), \
-             patch('lancedb.connect', return_value=mock_lancedb), \
-             patch('lancedb.pydantic.LanceModel'), \
-             patch('lancedb.pydantic.Vector'):
-
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            return_value=mock_sentence_transformers,
+        ), patch("lancedb.connect", return_value=mock_lancedb), patch(
+            "lancedb.pydantic.LanceModel"
+        ), patch("lancedb.pydantic.Vector"):
             mock_table = MagicMock()
             mock_lancedb.create_table.return_value = mock_table
             mock_lancedb.open_table.return_value = mock_table

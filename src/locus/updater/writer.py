@@ -3,7 +3,15 @@ import os
 import shutil
 from typing import List
 
-from ..formatting.colors import confirm, print_error, print_file_status, print_header, print_info, print_success, print_warning
+from ..formatting.colors import (
+    confirm,
+    print_error,
+    print_file_status,
+    print_header,
+    print_info,
+    print_success,
+    print_warning,
+)
 from .models import UpdateOperation
 
 logger = logging.getLogger(__name__)

@@ -40,7 +40,11 @@ def scan_directory(
                 continue
 
             rel_path_norm = rel_path.replace("\\", "/")
-            if any(fnmatch.fnmatch(rel_path_norm, pattern) or fnmatch.fnmatch(os.path.basename(rel_path_norm), pattern) for pattern in allow_patterns):
+            if any(
+                fnmatch.fnmatch(rel_path_norm, pattern)
+                or fnmatch.fnmatch(os.path.basename(rel_path_norm), pattern)
+                for pattern in allow_patterns
+            ):
                 candidate_files.append(abs_path)
 
     unique_files = sorted(list(set(candidate_files)))

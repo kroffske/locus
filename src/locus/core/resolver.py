@@ -29,7 +29,9 @@ def resolve_dependencies(
         if not current_file.endswith(".py"):
             continue
 
-        imported_modules = extract_imports(current_file, file_map[current_file].relative_path)
+        imported_modules = extract_imports(
+            current_file, file_map[current_file].relative_path
+        )
 
         for module_name in imported_modules:
             dep_file = module_to_file.get(module_name)
@@ -37,7 +39,9 @@ def resolve_dependencies(
                 visited.add(dep_file)
                 queue.append((dep_file, depth + 1))
 
-    logger.info(f"Resolved {len(required_files)} files from {len(initial_files)} initial targets.")
+    logger.info(
+        f"Resolved {len(required_files)} files from {len(initial_files)} initial targets."
+    )
     return required_files
 
 
@@ -57,7 +61,9 @@ def extract_imports(file_path: str, relative_path: str) -> Set[str]:
                 imports.add(alias.name.split(".")[0])
         elif isinstance(node, ast.ImportFrom):
             if node.level > 0:
-                resolved = _resolve_relative_import(relative_path, node.level, node.module)
+                resolved = _resolve_relative_import(
+                    relative_path, node.level, node.module
+                )
                 if resolved:
                     imports.add(resolved.split(".")[0])
             elif node.module:
@@ -66,7 +72,9 @@ def extract_imports(file_path: str, relative_path: str) -> Set[str]:
     return imports
 
 
-def _resolve_relative_import(current_rel_path: str, level: int, module: Optional[str]) -> Optional[str]:
+def _resolve_relative_import(
+    current_rel_path: str, level: int, module: Optional[str]
+) -> Optional[str]:
     """Resolves a relative import to an absolute module path."""
     path_parts = os.path.dirname(current_rel_path).replace("\\", "/").split("/")
     if path_parts == [""]:

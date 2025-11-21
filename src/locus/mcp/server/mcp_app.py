@@ -16,6 +16,7 @@ def get_mcp_app():
     mcp.tool()(index_paths)
     return mcp
 
+
 def run_stdio():
     """Run the MCP server over standard I/O."""
     app = get_mcp_app()

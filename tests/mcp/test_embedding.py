@@ -1,4 +1,5 @@
 """Tests for embedding component functionality."""
+
 import pytest
 from unittest.mock import patch
 from locus.mcp.components.embedding.embedding_component import EmbeddingComponent
@@ -12,13 +13,21 @@ class TestEmbeddingComponent:
         component = EmbeddingComponent("test-model", trust_remote_code=True)
 
         assert component.model is mock_sentence_transformers
-        assert component.query_prefix == "Represent this query for searching relevant code: "
+        assert (
+            component.query_prefix
+            == "Represent this query for searching relevant code: "
+        )
         mock_sentence_transformers.assert_called_once()
 
     def test_init_missing_dependency(self):
         """Test initialization fails when SentenceTransformers is not available."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer', side_effect=ImportError):
-            with pytest.raises(ImportError, match="SentenceTransformers is not installed"):
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer",
+            side_effect=ImportError,
+        ):
+            with pytest.raises(
+                ImportError, match="SentenceTransformers is not installed"
+            ):
                 EmbeddingComponent("test-model")
 
     def test_embed_chunks(self, mock_sentence_transformers):
@@ -27,7 +36,7 @@ class TestEmbeddingComponent:
         mock_sentence_transformers.encode.return_value.tolist.return_value = [
             [0.1, 0.2, 0.3],
             [0.4, 0.5, 0.6],
-            [0.7, 0.8, 0.9]
+            [0.7, 0.8, 0.9],
         ]
 
         component = EmbeddingComponent("test-model")
@@ -57,7 +66,9 @@ class TestEmbeddingComponent:
 
     def test_embed_chunks_single_item(self, mock_sentence_transformers):
         """Test embedding single chunk."""
-        mock_sentence_transformers.encode.return_value.tolist.return_value = [[0.1, 0.2, 0.3]]
+        mock_sentence_transformers.encode.return_value.tolist.return_value = [
+            [0.1, 0.2, 0.3]
+        ]
 
         component = EmbeddingComponent("test-model")
         result = component.embed_chunks(["single chunk"])
@@ -99,7 +110,9 @@ class TestEmbeddingComponent:
 
     def test_model_parameters_passed_correctly(self, mock_sentence_transformers):
         """Test that model parameters are passed correctly to SentenceTransformer."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer') as mock_constructor:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer"
+        ) as mock_constructor:
             mock_constructor.return_value = mock_sentence_transformers
 
             EmbeddingComponent("custom-model", trust_remote_code=False)
@@ -110,7 +123,9 @@ class TestEmbeddingComponent:
 
     def test_default_trust_remote_code(self, mock_sentence_transformers):
         """Test that trust_remote_code defaults to True."""
-        with patch('locus.mcp.components.embedding.embedding_component.SentenceTransformer') as mock_constructor:
+        with patch(
+            "locus.mcp.components.embedding.embedding_component.SentenceTransformer"
+        ) as mock_constructor:
             mock_constructor.return_value = mock_sentence_transformers
 
             EmbeddingComponent("test-model")
@@ -126,7 +141,7 @@ class TestEmbeddingComponent:
         # Test chunks
         component.embed_chunks(["test"])
         call_kwargs = mock_sentence_transformers.encode.call_args[1]
-        assert call_kwargs['normalize_embeddings'] is True
+        assert call_kwargs["normalize_embeddings"] is True
 
         # Reset mock
         mock_sentence_transformers.encode.reset_mock()
@@ -134,7 +149,7 @@ class TestEmbeddingComponent:
         # Test query
         component.embed_query("test query")
         call_kwargs = mock_sentence_transformers.encode.call_args[1]
-        assert call_kwargs['normalize_embeddings'] is True
+        assert call_kwargs["normalize_embeddings"] is True
 
     def test_query_prefix_configurable(self, mock_sentence_transformers):
         """Test that query prefix can be modified."""
@@ -170,7 +185,9 @@ class TestEmbeddingComponent:
         # Setup mock to return appropriate number of embeddings
         num_chunks = 100
         mock_embeddings = [[0.1, 0.2, 0.3] for _ in range(num_chunks)]
-        mock_sentence_transformers.encode.return_value.tolist.return_value = mock_embeddings
+        mock_sentence_transformers.encode.return_value.tolist.return_value = (
+            mock_embeddings
+        )
 
         component = EmbeddingComponent("test-model")
         large_batch = [f"chunk {i}" for i in range(num_chunks)]
@@ -191,14 +208,14 @@ class TestEmbeddingComponentIntegration:
         """Test embedding realistic code chunks."""
         mock_sentence_transformers.encode.return_value.tolist.return_value = [
             [0.1, 0.2, 0.3, 0.4],
-            [0.5, 0.6, 0.7, 0.8]
+            [0.5, 0.6, 0.7, 0.8],
         ]
 
         component = EmbeddingComponent("nomic-ai/CodeRankEmbed-v1")
 
         code_chunks = [
             "def hello_world():\n    return 'Hello, World!'",
-            "class Calculator:\n    def add(self, a, b):\n        return a + b"
+            "class Calculator:\n    def add(self, a, b):\n        return a + b",
         ]
 
         embeddings = component.embed_chunks(code_chunks)
@@ -225,7 +242,9 @@ class TestEmbeddingComponentIntegration:
 
     def test_consistency_between_calls(self, mock_sentence_transformers):
         """Test that identical inputs produce identical outputs."""
-        mock_sentence_transformers.encode.return_value.tolist.return_value = [[0.1, 0.2, 0.3]]
+        mock_sentence_transformers.encode.return_value.tolist.return_value = [
+            [0.1, 0.2, 0.3]
+        ]
 
         component = EmbeddingComponent("test-model")
 
