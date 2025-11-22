@@ -130,8 +130,17 @@ def is_path_ignored(
         # Handle **/folder/** patterns (gitignore-style)
         if pattern.startswith("**/") and pattern.endswith("/**"):
             folder_name = pattern[3:-3]  # Extract 'folder' from '**/folder/**'
-            if folder_name in path_parts:
-                return True
+            # The **/folder/** pattern means files INSIDE matching directories
+            # So we check all path components except the last one (which is the file/final dir)
+            if any(ch in folder_name for ch in "*?["):
+                # Use fnmatch to match against each path component (except last)
+                for part in path_parts[:-1]:
+                    if fnmatch.fnmatch(part, folder_name):
+                        return True
+            else:
+                # Exact match for folder name without wildcards (except last)
+                if folder_name in path_parts[:-1]:
+                    return True
             continue
 
         # Handle **/folder patterns
