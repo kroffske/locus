@@ -170,3 +170,7 @@ tasks/
 SESSION.md
 TODO.md
 out/
+
+# Locus analyzer config and logs
+.locus/
+pr-analyze_log.txt

@@ -5,6 +5,19 @@ from typing import Set, Tuple
 
 logger = logging.getLogger(__name__)
 
+
+def _save_default_settings(locus_dir: Path) -> None:
+    """Save default settings.json configuration to .locus directory."""
+    from ..core.config import save_default_config
+
+    try:
+        # save_default_config expects project_path as string
+        save_default_config(str(locus_dir.parent))
+        logger.info(f"Created default settings.json in {locus_dir}")
+    except OSError as e:
+        logger.warning(f"Could not create settings.json: {e}")
+
+
 # Default templates for config files
 DEFAULT_LOCUSALLOW = """# File patterns to include in analysis
 # One pattern per line, supports glob patterns
@@ -139,6 +152,7 @@ def create_default_config_if_needed(project_path: str) -> None:
     locus_dir = project_root / ".locus"
     locus_allow = locus_dir / "allow"
     locus_ignore = locus_dir / "ignore"
+    locus_settings = locus_dir / "settings.json"
 
     # Check if any config files exist (new or legacy)
     legacy_allow = project_root / ".locusallow"
@@ -186,6 +200,10 @@ def create_default_config_if_needed(project_path: str) -> None:
 
         except OSError as e:
             logger.warning(f"Could not migrate legacy config files: {e}")
+
+    # Create settings.json if .locus directory exists but settings.json doesn't
+    if locus_dir.exists() and not locus_settings.exists():
+        _save_default_settings(locus_dir)
 
 
 def load_project_config(project_path: str) -> Tuple[Set[str], Set[str]]:
