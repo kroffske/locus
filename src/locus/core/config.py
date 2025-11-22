@@ -42,11 +42,24 @@ DEFAULT_CONFIG = {
         "enabled": True,
         "max_lines_per_file": 5000,
         "grouping_rules": [
+            # lib/ and services/ - split by second level (depth 2)
+            {
+                "pattern": "lib/**",
+                "group_by": "directory",
+                "depth": 2,
+            },
+            {
+                "pattern": "services/**",
+                "group_by": "directory",
+                "depth": 2,
+            },
+            # src/*/features/* - keep existing pattern for compatibility
             {
                 "pattern": "src/*/features/*",
                 "group_by": "module",
                 "depth": 3,
             },
+            # Main entry points - separate files
             {
                 "pattern": "src/*/run.py",
                 "group_by": "file",
@@ -57,13 +70,8 @@ DEFAULT_CONFIG = {
                 "group_by": "file",
                 "separate": True,
             },
-            {
-                "pattern": "conf/*",
-                "group_by": "directory",
-                "depth": 1,
-            },
         ],
-        "default_depth": 2,
+        "default_depth": 1,  # Changed from 2 to 1 for other root folders
     }
 }
 
