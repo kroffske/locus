@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Pattern
+from typing import Optional, Pattern, Tuple
 
 from ..core.config import LocusConfig, load_config
 from ..core.modular_export import (
@@ -12,6 +12,12 @@ from ..models import AnalysisResult, FileAnalysis
 from .helpers import get_output_content
 
 logger = logging.getLogger(__name__)
+
+# Constants for modular export file format
+# These correspond to the format in format_grouped_content():
+# "# File: {path}\n# ===...\n\n{content}\n\n\n"
+FILE_HEADER_LINES = 3  # "# File: ...", "# ===...", empty line
+FILE_FOOTER_LINES = 2  # Two empty lines after content
 
 
 def format_code_collection(
@@ -124,13 +130,141 @@ def format_top_comments_collection(result: AnalysisResult) -> str:
     return "\n".join(output_parts)
 
 
+def generate_index_content(
+    groups: dict,
+    get_content_func,
+) -> str:
+    """Generate index content mapping source files to their locations in export files.
+
+    Args:
+        groups: Dictionary mapping group keys to lists of FileAnalysis objects
+        get_content_func: Function to get content from FileAnalysis
+
+    Returns:
+        Formatted index content as string
+
+    Raises:
+        ValueError: If groups is empty or get_content_func is not callable
+    """
+    # Input validation (fail-fast principle)
+    if not groups:
+        raise ValueError("Groups dictionary cannot be empty")
+    if not callable(get_content_func):
+        raise ValueError("get_content_func must be callable")
+
+    index_parts = []
+
+    # Add header with grep instructions
+    index_parts.extend(
+        [
+            "# Locus Export Index",
+            "# ===================",
+            "#",
+            "# This index helps you quickly find and filter source files in the export.",
+            "#",
+            "# Quick Search Tips:",
+            '#   Find file:        grep "^## " index.txt | grep "filename"',
+            '#   Find in module:   grep "Module:" index.txt | grep "module_name"',
+            '#   Get line range:   grep -A 4 "filename" index.txt',
+            '#   List all files:   grep "^## " index.txt',
+            "#",
+            "# Exported Files:",
+            "# ---------------",
+            "",
+        ]
+    )
+
+    # Process each group to build file index entries
+    file_entries = []
+
+    for group_key, files in sorted(groups.items()):
+        output_filename = f"{group_key}.txt"
+
+        # Calculate line ranges for each file in this group
+        current_line = 1
+        sorted_files = sorted(files, key=lambda fa: fa.file_info.relative_path)
+
+        for analysis in sorted_files:
+            content, _ = get_content_func(analysis)
+            if not content or content.startswith("# ERROR"):
+                continue
+
+            # Calculate how many lines this file takes in the output
+            # Use constants for consistent format calculation
+            content_lines = _count_lines(content.strip())
+
+            start_line = current_line + FILE_HEADER_LINES
+            end_line = start_line + content_lines - 1
+
+            # Extract description from comments or docstring
+            description = _extract_file_description(analysis)
+
+            # Build entry
+            entry_parts = [
+                f"## {analysis.file_info.relative_path}",
+                f"   Module: {analysis.file_info.module_name or 'N/A'}",
+                f"   Description: {description}",
+                f"   Export: {output_filename}",
+                f"   Lines: {start_line}-{end_line}",
+                "",
+            ]
+            file_entries.append("\n".join(entry_parts))
+
+            # Update line counter for next file
+            current_line += FILE_HEADER_LINES + content_lines + FILE_FOOTER_LINES
+
+    index_parts.extend(file_entries)
+    return "\n".join(index_parts)
+
+
+def _count_lines(content: str) -> int:
+    """Count lines in content efficiently.
+
+    Args:
+        content: String content to count lines in
+
+    Returns:
+        Number of lines in content
+    """
+    if not content:
+        return 0
+    # More efficient than splitlines() for large files
+    return content.count("\n") + 1
+
+
+def _extract_file_description(analysis: FileAnalysis) -> str:
+    """Extract a short description from file's comments or docstring.
+
+    Args:
+        analysis: FileAnalysis object
+
+    Returns:
+        Description string (first non-empty comment or first line of docstring)
+    """
+    # Try module docstring first
+    if analysis.annotations and analysis.annotations.module_docstring:
+        docstring = analysis.annotations.module_docstring.strip()
+        # Get first line
+        first_line = docstring.split("\n")[0].strip()
+        if first_line:
+            return first_line
+
+    # Try top comments
+    if analysis.comments:
+        for comment in analysis.comments:
+            if comment.strip():
+                return comment.strip()
+
+    return "No description available"
+
+
 def collect_files_modular(
     result: AnalysisResult,
     output_dir: str,
     full_code_re: Optional[Pattern] = None,
     annotation_re: Optional[Pattern] = None,
     config: Optional[LocusConfig] = None,
-) -> int:
+) -> Tuple[int, Optional[str]]:
     """Collects analyzed files into an output directory with modular grouping.
 
     Args:
@@ -141,7 +275,7 @@ def collect_files_modular(
         config: Locus configuration (loaded if not provided)
 
     Returns:
-        Number of output files created
+        Tuple of (number of output files created, index content string or None)
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -152,9 +286,10 @@ def collect_files_modular(
     # Check if modular export is enabled
     if not config.modular_export.enabled:
         logger.info("Modular export disabled, falling back to flat collection")
-        return collect_files_to_directory(
+        files_created = collect_files_to_directory(
             result, output_dir, full_code_re, annotation_re
         )
+        return (files_created, None)
 
     # Group files by module
     groups = group_files_by_module(result, config)
@@ -196,5 +331,18 @@ def collect_files_modular(
         except OSError as e:
             logger.error(f"Error writing file {output_path}: {e}")
 
+    # Generate and write index file
+    index_content = None
+    if groups:  # Only generate index if we have groups
+        try:
+            index_content = generate_index_content(groups, get_content)
+            index_path = os.path.join(output_dir, "index.txt")
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write(index_content)
+            logger.info("Created index file: index.txt")
+        except (ValueError, OSError) as e:
+            logger.error(f"Error writing index file: {e}")
+            index_content = None
+
     logger.info(f"Created {files_created} modular output files in {output_dir}")
-    return files_created
+    return (files_created, index_content)
