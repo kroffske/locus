@@ -45,6 +45,68 @@ def test_is_path_ignored():
     )
 
 
+def test_is_path_ignored_with_glob_wildcards():
+    """Test **/*pattern/** glob wildcard patterns (e.g., **/*.egg-info/**)."""
+    # Test **/*.egg-info/** pattern
+    ignore_patterns = {"**/*.egg-info/**"}
+
+    # Should ignore files inside directories matching *.egg-info
+    assert (
+        helpers.is_path_ignored("test_egg.egg-info/PKG-INFO", None, ignore_patterns)
+        is True
+    )
+    assert (
+        helpers.is_path_ignored("locus.egg-info/SOURCES.txt", None, ignore_patterns)
+        is True
+    )
+    assert (
+        helpers.is_path_ignored(
+            "nested/dir/my_package.egg-info/top_level.txt", None, ignore_patterns
+        )
+        is True
+    )
+
+    # Should NOT ignore paths that don't match the pattern
+    assert helpers.is_path_ignored("egg-info/file.txt", None, ignore_patterns) is False
+
+    # Test **/*cache/** pattern (matches .pytest_cache, .mypy_cache, etc.)
+    cache_patterns = {"**/*cache/**"}
+
+    assert (
+        helpers.is_path_ignored(".pytest_cache/README.md", None, cache_patterns) is True
+    )
+    assert (
+        helpers.is_path_ignored(".mypy_cache/3.9/cache.json", None, cache_patterns)
+        is True
+    )
+    assert (
+        helpers.is_path_ignored(
+            "node_modules/.cache/babel/file.js", None, cache_patterns
+        )
+        is True
+    )
+
+    # Should NOT ignore directories that don't end with 'cache'
+    assert helpers.is_path_ignored("cache_dir/file.txt", None, cache_patterns) is False
+
+
+def test_is_path_ignored_exact_folder_pattern():
+    """Test **/folder/** patterns with exact folder names (no wildcards)."""
+    ignore_patterns = {"**/build/**"}
+
+    # Should ignore files inside 'build' directories at any level
+    assert helpers.is_path_ignored("build/output.txt", None, ignore_patterns) is True
+    assert helpers.is_path_ignored("src/build/lib.py", None, ignore_patterns) is True
+    assert (
+        helpers.is_path_ignored("nested/dir/build/file.txt", None, ignore_patterns)
+        is True
+    )
+
+    # Should NOT ignore directories with similar but non-exact names
+    assert helpers.is_path_ignored("builder/file.txt", None, ignore_patterns) is False
+    assert helpers.is_path_ignored("my_build/file.txt", None, ignore_patterns) is False
+
+
 def test_build_file_tree():
     """Test the construction of the nested dictionary file tree."""
     file_infos = [
