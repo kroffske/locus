@@ -124,6 +124,112 @@ def format_top_comments_collection(result: AnalysisResult) -> str:
     return "\n".join(output_parts)
 
 
+def generate_index_content(
+    groups: dict,
+    get_content_func,
+) -> str:
+    """Generate index content mapping source files to their locations in export files.
+
+    Args:
+        groups: Dictionary mapping group keys to lists of FileAnalysis objects
+        get_content_func: Function to get content from FileAnalysis
+
+    Returns:
+        Formatted index content as string
+    """
+    index_parts = []
+
+    # Add header with grep instructions
+    index_parts.extend(
+        [
+            "# Locus Export Index",
+            "# ===================",
+            "#",
+            "# This index helps you quickly find and filter source files in the export.",
+            "#",
+            "# Quick Search Tips:",
+            '#   Find file:        grep "^## " index.txt | grep "filename"',
+            '#   Find in module:   grep "Module:" index.txt | grep "module_name"',
+            '#   Get line range:   grep -A 4 "filename" index.txt',
+            '#   List all files:   grep "^## " index.txt',
+            "#",
+            "# Exported Files:",
+            "# ---------------",
+            "",
+        ]
+    )
+
+    # Process each group to build file index entries
+    file_entries = []
+
+    for group_key, files in sorted(groups.items()):
+        output_filename = f"{group_key}.txt"
+
+        # Calculate line ranges for each file in this group
+        current_line = 1
+        sorted_files = sorted(files, key=lambda fa: fa.file_info.relative_path)
+
+        for analysis in sorted_files:
+            content, _ = get_content_func(analysis)
+            if not content or content.startswith("# ERROR"):
+                continue
+
+            # Calculate how many lines this file takes in the output
+            # Format: separator comment + separator line + empty line + content + 2 empty lines
+            file_header_lines = 3  # "# File: ...", "# ===...", empty line
+            content_lines = len(content.strip().splitlines())
+            file_footer_lines = 2  # Two empty lines after content
+
+            start_line = current_line + file_header_lines
+            end_line = start_line + content_lines - 1
+
+            # Extract description from comments or docstring
+            description = _extract_file_description(analysis)
+
+            # Build entry
+            entry_parts = [
+                f"## {analysis.file_info.relative_path}",
+                f"   Module: {analysis.file_info.module_name or 'N/A'}",
+                f"   Description: {description}",
+                f"   Export: {output_filename}",
+                f"   Lines: {start_line}-{end_line}",
+                "",
+            ]
+            file_entries.append("\n".join(entry_parts))
+
+            # Update line counter for next file
+            current_line += file_header_lines + content_lines + file_footer_lines
+
+    index_parts.extend(file_entries)
+    return "\n".join(index_parts)
+
+
+def _extract_file_description(analysis: FileAnalysis) -> str:
+    """Extract a short description from file's comments or docstring.
+
+    Args:
+        analysis: FileAnalysis object
+
+    Returns:
+        Description string (first non-empty comment or first line of docstring)
+    """
+    # Try module docstring first
+    if analysis.annotations and analysis.annotations.module_docstring:
+        docstring = analysis.annotations.module_docstring.strip()
+        # Get first line
+        first_line = docstring.split("\n")[0].strip()
+        if first_line:
+            return first_line
+
+    # Try top comments
+    if analysis.comments:
+        for comment in analysis.comments:
+            if comment.strip():
+                return comment.strip()
+
+    return "No description available"
+
+
 def collect_files_modular(
     result: AnalysisResult,
     output_dir: str,
@@ -195,6 +301,23 @@ def collect_files_modular(
             )
         except OSError as e:
             logger.error(f"Error writing file {output_path}: {e}")
+
+    # Generate and write index file
+    index_content = generate_index_content(groups, get_content)
+    index_path = os.path.join(output_dir, "index.txt")
+    try:
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(index_content)
+        logger.info("Created index file: index.txt")
+
+        # Print index to console for easy copying
+        print("\n" + "=" * 80)
+        print("INDEX FILE CONTENT (copy as prompt):")
+        print("=" * 80)
+        print(index_content)
+        print("=" * 80 + "\n")
+    except OSError as e:
+        logger.error(f"Error writing index file {index_path}: {e}")
 
     logger.info(f"Created {files_created} modular output files in {output_dir}")
     return files_created
