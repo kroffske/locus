@@ -4,11 +4,16 @@
 #
 # Note: The following are ALWAYS ignored by default in code:
 # - All dot-directories (.git, .venv, .cache, .pytest_cache, etc.)
-# - Common build dirs: build, dist, target, out, output, outputs
+# - Common build dirs: build, dist, target, out, output, outputs, bin, obj
+# - Virtual environments: venv, env, .env, .venv, ENV
 # - Cache dirs: __pycache__, node_modules, .mypy_cache, .ruff_cache
 # - Temp dirs: tmp, temp, .tmp, .temp
 # - Log dirs: logs
 # - Common file patterns: *.pyc, *.pyo, *.log, *.swp, .DS_Store
+#
+# IMPORTANT: The above directories are hardcoded and CANNOT be overridden.
+# If you need to include files from these directories, you must modify
+# ALWAYS_IGNORE_DIRS in src/locus/utils/helpers.py
 
 # Project-specific patterns (add your custom patterns here)
 # Examples:

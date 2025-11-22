@@ -18,6 +18,7 @@ ALWAYS_IGNORE_DIRS = {
     "venv",
     "env",
     ".env",
+    "ENV",  # Uppercase virtualenv (common on Windows)
     "__pycache__",
     "node_modules",
     "build",
@@ -29,6 +30,8 @@ ALWAYS_IGNORE_DIRS = {
     "out",
     "output",
     "outputs",
+    "bin",  # Common build output (C/C++, .NET, etc.)
+    "obj",  # Common build output (.NET, C++, etc.)
     # Cache directories
     ".pytest_cache",
     ".mypy_cache",
