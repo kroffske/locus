@@ -1,70 +1,25 @@
 # File patterns to exclude from analysis
-# One pattern per line, supports glob patterns
+# One pattern per line, supports glob patterns and **/folder/** syntax
 # Lines starting with # are comments
+#
+# Note: The following are ALWAYS ignored by default in code:
+# - All dot-directories (.git, .venv, .cache, .pytest_cache, etc.)
+# - Common build dirs: build, dist, target, out, output, outputs, bin, obj
+# - Virtual environments: venv, env, .env, .venv, ENV
+# - Cache dirs: __pycache__, node_modules, .mypy_cache, .ruff_cache
+# - Temp dirs: tmp, temp, .tmp, .temp
+# - Log dirs: logs
+# - Common file patterns: *.pyc, *.pyo, *.log, *.swp, .DS_Store
+#
+# IMPORTANT: The above directories are hardcoded and CANNOT be overridden.
+# If you need to include files from these directories, you must modify
+# ALWAYS_IGNORE_DIRS in src/locus/utils/helpers.py
 
-# Version control
-**/.git/**
-**/.hg/**
-**/.svn/**
-**/.bzr/**
-
-# Python
-**/__pycache__/**
-**/*.pyc
-**/*.pyo
-**/*.pyd
-**/.Python
-**/*.egg-info/**
-**/dist/**
-**/build/**
-**/.pytest_cache/**
-**/.mypy_cache/**
-**/.ruff_cache/**
-**/.coverage
-**/*.coverage
-**/.hypothesis/**
-
-# Virtual environments
-**/.venv/**
-**/venv/**
-**/.env/**
-**/env/**
-**/ENV/**
-
-# Node
-**/node_modules/**
-**/npm-debug.log
-**/yarn-error.log
-**/yarn-debug.log
-**/.npm/**
-**/.yarn/**
-
-# IDE
-**/.idea/**
-**/.vscode/**
-**/*.swp
-**/*.swo
-**/*~
-**/.DS_Store
-**/Thumbs.db
-
-# Build outputs
-**/out/**
-**/output/**
-**/outputs/**
-**/target/**
-**/bin/**
-**/obj/**
-
-# Logs
-**/logs/**
-**/*.log
-
-# Temporary files
-**/tmp/**
-**/temp/**
-**/.tmp/**
-**/.temp/**
+# Project-specific patterns (add your custom patterns here)
+# Examples:
+# data/
+# *.db
+# docs/internal/
 
 # Config files to exclude
 .locusignore
