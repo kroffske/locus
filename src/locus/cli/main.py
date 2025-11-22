@@ -229,7 +229,16 @@ def handle_analyze_command(args):
         elif mode == "collection":
             # Collection mode: write to directory (with modular grouping)
             output_path = args.output
-            code.collect_files_modular(result, output_path, full_code_re, annotation_re)
+            files_created, index_content = code.collect_files_modular(
+                result, output_path, full_code_re, annotation_re
+            )
+
+            # Print index to console if available (orchestration layer)
+            if index_content:
+                print_divider()
+                print_header("Index File (copy as prompt)")
+                print(index_content)
+                print_divider()
 
             # Add annotations report if requested
             if args.add_annotations or args.annotations:

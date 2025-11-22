@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Pattern
+from typing import Optional, Pattern, Tuple
 
 from ..core.config import LocusConfig, load_config
 from ..core.modular_export import (
@@ -12,6 +12,12 @@ from ..models import AnalysisResult, FileAnalysis
 from .helpers import get_output_content
 
 logger = logging.getLogger(__name__)
+
+# Constants for modular export file format
+# These correspond to the format in format_grouped_content():
+# "# File: {path}\n# ===...\n\n{content}\n\n\n"
+FILE_HEADER_LINES = 3  # "# File: ...", "# ===...", empty line
+FILE_FOOTER_LINES = 2  # Two empty lines after content
 
 
 def format_code_collection(
@@ -136,7 +142,16 @@ def generate_index_content(
 
     Returns:
         Formatted index content as string
+
+    Raises:
+        ValueError: If groups is empty or get_content_func is not callable
     """
+    # Input validation (fail-fast principle)
+    if not groups:
+        raise ValueError("Groups dictionary cannot be empty")
+    if not callable(get_content_func):
+        raise ValueError("get_content_func must be callable")
+
     index_parts = []
 
     # Add header with grep instructions
@@ -175,12 +190,10 @@ def generate_index_content(
                 continue
 
             # Calculate how many lines this file takes in the output
-            # Format: separator comment + separator line + empty line + content + 2 empty lines
-            file_header_lines = 3  # "# File: ...", "# ===...", empty line
-            content_lines = len(content.strip().splitlines())
-            file_footer_lines = 2  # Two empty lines after content
+            # Use constants for consistent format calculation
+            content_lines = _count_lines(content.strip())
 
-            start_line = current_line + file_header_lines
+            start_line = current_line + FILE_HEADER_LINES
             end_line = start_line + content_lines - 1
 
             # Extract description from comments or docstring
@@ -198,10 +211,25 @@ def generate_index_content(
             file_entries.append("\n".join(entry_parts))
 
             # Update line counter for next file
-            current_line += file_header_lines + content_lines + file_footer_lines
+            current_line += FILE_HEADER_LINES + content_lines + FILE_FOOTER_LINES
 
     index_parts.extend(file_entries)
     return "\n".join(index_parts)
+
+
+def _count_lines(content: str) -> int:
+    """Count lines in content efficiently.
+
+    Args:
+        content: String content to count lines in
+
+    Returns:
+        Number of lines in content
+    """
+    if not content:
+        return 0
+    # More efficient than splitlines() for large files
+    return content.count("\n") + 1
 
 
 def _extract_file_description(analysis: FileAnalysis) -> str:
@@ -236,7 +264,7 @@ def collect_files_modular(
     full_code_re: Optional[Pattern] = None,
     annotation_re: Optional[Pattern] = None,
     config: Optional[LocusConfig] = None,
-) -> int:
+) -> Tuple[int, Optional[str]]:
     """Collects analyzed files into an output directory with modular grouping.
 
     Args:
@@ -247,7 +275,7 @@ def collect_files_modular(
         config: Locus configuration (loaded if not provided)
 
     Returns:
-        Number of output files created
+        Tuple of (number of output files created, index content string or None)
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -258,9 +286,10 @@ def collect_files_modular(
     # Check if modular export is enabled
     if not config.modular_export.enabled:
         logger.info("Modular export disabled, falling back to flat collection")
-        return collect_files_to_directory(
+        files_created = collect_files_to_directory(
             result, output_dir, full_code_re, annotation_re
         )
+        return (files_created, None)
 
     # Group files by module
     groups = group_files_by_module(result, config)
@@ -303,21 +332,17 @@ def collect_files_modular(
             logger.error(f"Error writing file {output_path}: {e}")
 
     # Generate and write index file
-    index_content = generate_index_content(groups, get_content)
-    index_path = os.path.join(output_dir, "index.txt")
-    try:
-        with open(index_path, "w", encoding="utf-8") as f:
-            f.write(index_content)
-        logger.info("Created index file: index.txt")
-
-        # Print index to console for easy copying
-        print("\n" + "=" * 80)
-        print("INDEX FILE CONTENT (copy as prompt):")
-        print("=" * 80)
-        print(index_content)
-        print("=" * 80 + "\n")
-    except OSError as e:
-        logger.error(f"Error writing index file {index_path}: {e}")
+    index_content = None
+    if groups:  # Only generate index if we have groups
+        try:
+            index_content = generate_index_content(groups, get_content)
+            index_path = os.path.join(output_dir, "index.txt")
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write(index_content)
+            logger.info("Created index file: index.txt")
+        except (ValueError, OSError) as e:
+            logger.error(f"Error writing index file: {e}")
+            index_content = None
 
     logger.info(f"Created {files_created} modular output files in {output_dir}")
-    return files_created
+    return (files_created, index_content)

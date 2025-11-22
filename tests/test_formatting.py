@@ -202,3 +202,31 @@ def test_generate_index_content():
     # Verify line numbers are calculated correctly
     # First file should start at line 4 (after header lines)
     assert "Lines: 4-" in index_content
+
+
+def test_generate_index_content_validation():
+    """Test input validation for generate_index_content."""
+    import pytest
+
+    # Test with empty groups
+    with pytest.raises(ValueError, match="Groups dictionary cannot be empty"):
+        code.generate_index_content({}, lambda x: ("", ""))
+
+    # Test with non-callable function
+    with pytest.raises(ValueError, match="get_content_func must be callable"):
+        code.generate_index_content({"test": []}, "not_a_function")
+
+
+def test_count_lines():
+    """Test the _count_lines helper function."""
+    # Test empty content
+    assert code._count_lines("") == 0
+
+    # Test single line
+    assert code._count_lines("single line") == 1
+
+    # Test multiple lines
+    assert code._count_lines("line1\nline2\nline3") == 3
+
+    # Test with trailing newline
+    assert code._count_lines("line1\nline2\n") == 3
