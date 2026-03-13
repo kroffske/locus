@@ -276,6 +276,8 @@ ruff format src/ tests/
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Дизайн системы и паттерны
 - [TESTS.md](TESTS.md) - Стратегия тестирования
 - [AGENTS.md](AGENTS.md) - Руководство для AI-агентов
+- [.miloc/docs/ASSEMBLY.md](.miloc/docs/ASSEMBLY.md) - Короткая карта репозитория
+- [.miloc/docs/SYSTEM_DESIGN.md](.miloc/docs/SYSTEM_DESIGN.md) - Подробная архитектурная карта
 
 ## 🔗 Сценарии использования
 

@@ -120,3 +120,4 @@ Advanced options:
   - `--t1-strategy exact|ast` (default: exact), `--t2-strategy exact|ast` (default: ast)
 - Emit JSON summary for CI dashboards:
   - `python tests/benchmarks/run_benchmarks.py --strategy ast --json-out out/bench-summary.json`
+  - `out/` is a local generated directory; the summary JSON should not be committed

@@ -158,6 +158,7 @@ Output and metrics:
   - Cases passed/failed
 - Optional JSON for CI dashboards:
   - `--json-out out/bench-summary.json`
+  - `out/` is local generated output; do not commit the resulting file
 
 Notes:
 - Bench meta may include class‑level cases. Current extractor yields function/method units; prefer specifying `qualname: Class.method` to target methods. Class‑unit extraction is on the roadmap.

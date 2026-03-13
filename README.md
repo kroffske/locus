@@ -276,6 +276,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and patterns
 - [TESTS.md](TESTS.md) - Testing strategy
 - [AGENTS.md](AGENTS.md) - AI agent guidelines
+- [.miloc/docs/ASSEMBLY.md](.miloc/docs/ASSEMBLY.md) - Short repo map for humans and agents
+- [.miloc/docs/SYSTEM_DESIGN.md](.miloc/docs/SYSTEM_DESIGN.md) - Deep architecture and operational map
 
 ## 🔗 Use Cases
 
