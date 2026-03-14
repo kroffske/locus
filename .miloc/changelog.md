@@ -4,6 +4,22 @@
 # If work drifted from tasks/goals, record why in `.miloc/global-notes.miloc.md`.
 
 2026-03-14
+- Scope: T0002 LLM-friendly export workflow
+- What changed:
+  - Made `locus analyze` honor `--include` / `--exclude` in the real scan/export path and switched the default ignore baseline to read-only `.gitignore` + built-in noise ignores.
+  - Stopped default analyze/export runs from bootstrapping `.locus/settings.json` into analyzed repositories.
+  - Reworked directory export into a deterministic LLM package with `manifest.json`, `tree.txt`, `description.md`, `part-*.txt`, and compatibility `index.txt`, including continuation splitting for oversized files.
+  - Added notebook export support with cells-only default rendering and explicit `--notebook-outputs` opt-in for outputs/media markers.
+  - Added regression coverage for output mode dispatch, `.gitignore` directory rules, no-side-effect analysis, package surfaces, oversized-file splitting, and notebook rendering.
+- Why: close the follow-up implementation task from T0001 and make the analyze/export workflow usable for LLM/tool-use packaging without repo-touch side effects.
+- Links: `.tasks/done/T0002-2026-03-14-llm-export-implementation/epic.md`, `.tasks/done/T0002-2026-03-14-llm-export-implementation/artifacts/qa.md`, `src/locus/cli/main.py`, `src/locus/core/orchestrator.py`, `src/locus/formatting/code.py`
+- Verification:
+  - `PYTHONPATH=src python3 -m pytest tests/test_cli.py tests/test_core.py tests/test_formatting.py tests/test_utils.py -q`
+  - `python3 -m ruff check src/locus/cli/main.py src/locus/cli/args.py src/locus/core/orchestrator.py src/locus/core/scanner.py src/locus/core/modular_export.py src/locus/core/processor.py src/locus/utils/config.py src/locus/formatting/code.py tests/test_cli.py tests/test_core.py tests/test_formatting.py tests/test_utils.py`
+  - CLI smokes recorded in `.tasks/done/T0002-2026-03-14-llm-export-implementation/artifacts/qa.md` for directory export, existing output directories with dots, no `.locus/settings.json` side effect, notebook default vs `--notebook-outputs`, and a lightweight perf timing run
+- Drift (if any): direct `$miloc-verify` skill invocation was unavailable in this session, so the QA role artifact under `.tasks/done/T0002-2026-03-14-llm-export-implementation/artifacts/qa.md` served as the substitute gate.
+
+2026-03-14
 - Scope: T0001 LLM export review closure + T0002 implementation staging
 - What changed:
   - Closed the planning/review task for LLM-oriented export under `.tasks/done/T0001-2026-03-14-llm-export-review-plan/`.

@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Set, Tuple
+from typing import Iterable, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,7 @@ DEFAULT_LOCUSALLOW = """# File patterns to include in analysis
 **/docker-compose.yml
 **/Makefile
 **/.env.example
+**/*.ipynb
 """
 
 DEFAULT_LOCUSIGNORE = """# File patterns to exclude from analysis
@@ -212,12 +213,10 @@ def load_project_config(project_path: str) -> Tuple[Set[str], Set[str]]:
     Priority order:
     1. .locus/allow and .locus/ignore (new directory structure)
     2. .locusallow / .locusignore (legacy root files for backwards compatibility)
+    3. .gitignore patterns are always added to ignore baseline when present.
 
-    If no config exists, creates default .locus directory and files.
+    If no allow config exists, falls back to built-in default allow patterns.
     """
-    # Try to create default config files if needed
-    create_default_config_if_needed(project_path)
-
     project_root = Path(project_path)
 
     # Check for new directory structure first
@@ -234,7 +233,13 @@ def load_project_config(project_path: str) -> Tuple[Set[str], Set[str]]:
     allow_file = str(new_allow) if new_allow.exists() else str(legacy_allow)
 
     ignore_patterns = _read_pattern_file(ignore_file)
+    ignore_patterns.update(_read_gitignore_patterns(project_root / ".gitignore"))
     allow_patterns = _read_pattern_file(allow_file)
+    if not allow_patterns:
+        allow_patterns = _default_allow_patterns()
+        logger.debug(
+            "No allow config found; using built-in default allow pattern baseline."
+        )
 
     logger.debug(f"Loaded {len(ignore_patterns)} ignore patterns.")
     logger.debug(f"Loaded {len(allow_patterns)} allow patterns.")
@@ -258,3 +263,73 @@ def _read_pattern_file(filepath: str) -> Set[str]:
         logger.error(f"Could not read pattern file {filepath}: {e}")
 
     return patterns
+
+
+def _default_allow_patterns() -> Set[str]:
+    """Build allow pattern baseline from the template text."""
+    return _read_pattern_lines(DEFAULT_LOCUSALLOW.splitlines())
+
+
+def _read_pattern_lines(lines: Iterable[str]) -> Set[str]:
+    """Parse pattern lines, skipping comments and empty entries."""
+    patterns: Set[str] = set()
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith("#"):
+            patterns.add(line)
+    return patterns
+
+
+def _read_gitignore_patterns(filepath: Path) -> Set[str]:
+    """Parse .gitignore into ignore patterns compatible with scanner matching."""
+    patterns: Set[str] = set()
+    if not filepath.is_file():
+        return patterns
+
+    try:
+        with filepath.open(encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("!"):
+                    # Negation rules are currently not supported in scanner matching.
+                    continue
+                normalized = _normalize_gitignore_pattern(line)
+                if normalized:
+                    patterns.add(normalized)
+    except OSError as e:
+        logger.error(f"Could not read .gitignore file {filepath}: {e}")
+
+    return patterns
+
+
+def _normalize_gitignore_pattern(pattern: str) -> str:
+    """Normalize .gitignore pattern to internal matcher conventions.
+
+    Notes:
+    - `cache/` in .gitignore means "ignore any directory named cache at any depth".
+    - `/cache/` means ignore cache directory at the repo root.
+    """
+    normalized = pattern.strip()
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
+
+    anchored = normalized.startswith("/")
+    if anchored:
+        normalized = normalized[1:]
+
+    is_dir_rule = normalized.endswith("/")
+    normalized = normalized.rstrip("/")
+
+    if not normalized:
+        return ""
+
+    if is_dir_rule:
+        if anchored or "/" in normalized:
+            # Root-relative or explicit nested path.
+            return f"{normalized}/**"
+        # Directory-name rule should match any depth.
+        return f"**/{normalized}/**"
+
+    return normalized

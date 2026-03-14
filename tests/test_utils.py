@@ -16,6 +16,20 @@ def test_load_project_config(project_structure: Path):
     assert "*.log" in ignore_patterns
 
 
+def test_load_project_config_uses_gitignore_baseline(tmp_path: Path):
+    """When .locus config is absent, .gitignore contributes to ignore baseline."""
+    project_root = tmp_path / "repo"
+    project_root.mkdir()
+    (project_root / ".gitignore").write_text("cache/\n*.tmp\n", encoding="utf-8")
+
+    ignore_patterns, allow_patterns = config.load_project_config(str(project_root))
+
+    assert "**/cache/**" in ignore_patterns
+    assert "*.tmp" in ignore_patterns
+    assert "**/*.py" in allow_patterns
+    assert not (project_root / ".locus").exists()
+
+
 def test_is_path_ignored():
     """Test the path ignoring logic with various patterns."""
     ignore_patterns = {"build/", "*.log", "docs/internal"}

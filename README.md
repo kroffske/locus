@@ -54,13 +54,13 @@ locus analyze -p -f
 ### 2. Export for LLM Chat
 
 ```bash
-# Export with modular grouping (recommended)
+# Export as LLM package (recommended)
 locus analyze -o llm_context
 
-# This creates organized files like:
-# - src_myapp_features.txt  (all features/* in one file)
-# - src_myapp_main.py.txt   (main.py separately)
-# - conf.txt                (all config files together)
+# This creates deterministic package surfaces:
+# - manifest.json / tree.txt / description.md
+# - part-0001.txt, part-0002.txt, ...
+# - index.txt (quick lookup)
 ```
 
 ### 3. Create Configuration
@@ -80,6 +80,9 @@ locus analyze -o context --include "**/*.py"
 
 # Exclude tests and migrations
 locus analyze -o context --exclude "tests/**" "**/migrations/**"
+
+# Include notebook outputs/media explicitly (default is cells-only export)
+locus analyze -o context --include "**/*.ipynb" --notebook-outputs
 
 # Limit import depth
 locus analyze src/main.py -d 2 -o context.md
@@ -190,11 +193,12 @@ locus update --backup < changes.md
 
 ```
 output_dir/
-├── src_myapp_features.txt      # All feature files grouped
-├── src_myapp_utils.txt         # Utility files grouped
-├── src_myapp_main.py.txt       # Main entry point (separate)
-├── conf.txt                    # All config files together
-└── README.md                   # Project README (optional)
+├── manifest.json               # Machine-readable map: files -> parts/chunks
+├── tree.txt                    # Exported source tree
+├── description.md              # Package summary and usage notes
+├── part-0001.txt               # Chunked source payloads (~5k target lines)
+├── part-0002.txt               # Continuation part when needed
+└── index.txt                   # Grep-friendly lookup
 ```
 
 Each file contains:
@@ -268,13 +272,13 @@ Run `make help` to see all commands:
 - `make test` - Run core tests
 - `make quality` - Lint + format + test
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.
+See [.miloc/docs/CONTRIBUTING.md](.miloc/docs/CONTRIBUTING.md) for detailed development guide.
 
 ## 📚 Documentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Development setup and workflow
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System design and patterns
-- [TESTS.md](TESTS.md) - Testing strategy
+- [.miloc/docs/CONTRIBUTING.md](.miloc/docs/CONTRIBUTING.md) - Development setup and workflow
+- [.miloc/docs/ARCHITECTURE.md](.miloc/docs/ARCHITECTURE.md) - System design and patterns
+- [.miloc/docs/TESTS.md](.miloc/docs/TESTS.md) - Testing strategy
 - [AGENTS.md](AGENTS.md) - AI agent guidelines
 - [.miloc/docs/ASSEMBLY.md](.miloc/docs/ASSEMBLY.md) - Short repo map for humans and agents
 - [.miloc/docs/SYSTEM_DESIGN.md](.miloc/docs/SYSTEM_DESIGN.md) - Deep architecture and operational map
@@ -302,7 +306,7 @@ MIT
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [.miloc/docs/CONTRIBUTING.md](.miloc/docs/CONTRIBUTING.md) for guidelines.
 
 ## 💡 Tips
 

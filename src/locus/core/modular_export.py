@@ -3,14 +3,40 @@
 import logging
 import os
 from collections import defaultdict
+from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from ..models import AnalysisResult, FileAnalysis
 from .config import GroupingRule, LocusConfig
 
 logger = logging.getLogger(__name__)
+
+TARGET_PART_LINES = 5000
+HARD_PART_LINE_CEILING = 10000
+SEGMENT_HEADER_LINES = 5
+
+
+@dataclass
+class ExportSegment:
+    """Single formatted segment included in an export part."""
+
+    source_path: str
+    group_key: str
+    chunk_index: int
+    chunk_count: int
+    content: str
+    line_count: int
+
+
+@dataclass
+class ExportPart:
+    """Single exported part file with bounded total line count."""
+
+    filename: str
+    line_count: int
+    segments: List[ExportSegment]
 
 
 def get_group_key(
@@ -224,3 +250,123 @@ def format_grouped_content(
 
     full_content = "\n".join(output_parts)
     return full_content, total_lines
+
+
+def build_export_parts(
+    groups: Dict[str, List[FileAnalysis]],
+    get_content_func: Callable[[FileAnalysis], Tuple[str, str]],
+    target_lines: int = TARGET_PART_LINES,
+    hard_max_lines: int = HARD_PART_LINE_CEILING,
+) -> List[ExportPart]:
+    """Create deterministic bounded export parts with continuation splitting."""
+    if target_lines <= 0:
+        raise ValueError("target_lines must be positive")
+    if hard_max_lines <= 0:
+        raise ValueError("hard_max_lines must be positive")
+    if hard_max_lines < target_lines:
+        raise ValueError("hard_max_lines must be >= target_lines")
+
+    segments = _build_segments(groups, get_content_func, hard_max_lines)
+    if not segments:
+        return []
+
+    parts: List[ExportPart] = []
+    current_segments: List[ExportSegment] = []
+    current_line_count = 0
+    part_index = 1
+
+    for segment in segments:
+        would_exceed_target = (
+            current_segments and current_line_count + segment.line_count > target_lines
+        )
+        would_exceed_hard_limit = (
+            current_segments
+            and current_line_count + segment.line_count > hard_max_lines
+        )
+        if would_exceed_target or would_exceed_hard_limit:
+            parts.append(
+                ExportPart(
+                    filename=f"part-{part_index:04d}.txt",
+                    line_count=current_line_count,
+                    segments=current_segments,
+                )
+            )
+            part_index += 1
+            current_segments = []
+            current_line_count = 0
+
+        current_segments.append(segment)
+        current_line_count += segment.line_count
+
+    if current_segments:
+        parts.append(
+            ExportPart(
+                filename=f"part-{part_index:04d}.txt",
+                line_count=current_line_count,
+                segments=current_segments,
+            )
+        )
+
+    return parts
+
+
+def _build_segments(
+    groups: Dict[str, List[FileAnalysis]],
+    get_content_func: Callable[[FileAnalysis], Tuple[str, str]],
+    hard_max_lines: int,
+) -> List[ExportSegment]:
+    """Build ordered export segments from grouped files."""
+    segments: List[ExportSegment] = []
+    payload_limit = max(1, hard_max_lines - SEGMENT_HEADER_LINES)
+
+    for group_key in sorted(groups.keys()):
+        files = sorted(groups[group_key], key=lambda fa: fa.file_info.relative_path)
+        for analysis in files:
+            content, _ = get_content_func(analysis)
+            if not content or content.startswith("# ERROR"):
+                continue
+
+            content_lines = content.strip().splitlines()
+            if not content_lines:
+                continue
+
+            chunks = _chunk_lines(content_lines, payload_limit)
+            chunk_count = len(chunks)
+            for chunk_index, chunk_lines in enumerate(chunks, start=1):
+                source_path = analysis.file_info.relative_path
+                if chunk_count > 1:
+                    source_label = f"{source_path} (continued {chunk_index}/{chunk_count})"
+                else:
+                    source_label = source_path
+                segment_lines = [
+                    f"# File: {source_label}",
+                    "# " + "=" * 78,
+                    "",
+                    *chunk_lines,
+                    "",
+                    "",
+                ]
+                segments.append(
+                    ExportSegment(
+                        source_path=source_path,
+                        group_key=group_key,
+                        chunk_index=chunk_index,
+                        chunk_count=chunk_count,
+                        content="\n".join(segment_lines),
+                        line_count=len(segment_lines),
+                    )
+                )
+
+    return segments
+
+
+def _chunk_lines(lines: List[str], max_payload_lines: int) -> List[List[str]]:
+    """Split a sequence of lines into deterministic chunks."""
+    if not lines:
+        return []
+    if max_payload_lines <= 0:
+        return [lines]
+    return [
+        lines[i : i + max_payload_lines]
+        for i in range(0, len(lines), max_payload_lines)
+    ]

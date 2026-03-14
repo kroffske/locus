@@ -1,7 +1,8 @@
 import ast
+import json
 import logging
 import os
-from typing import List
+from typing import Any, Dict, List
 
 from ..formatting import data_preview
 from ..models import AnnotationInfo, FileAnalysis, FileInfo
@@ -10,7 +11,11 @@ from ..utils.file_cache import FileCache
 logger = logging.getLogger(__name__)
 
 
-def process_file(file_info: FileInfo, file_cache: FileCache) -> FileAnalysis:
+def process_file(
+    file_info: FileInfo,
+    file_cache: FileCache,
+    include_notebook_outputs: bool = False,
+) -> FileAnalysis:
     """Processes a single file, dispatching to the correct analyzer based on file type."""
     file_path = file_info.absolute_path
     _, extension = os.path.splitext(file_path)
@@ -18,12 +23,49 @@ def process_file(file_info: FileInfo, file_cache: FileCache) -> FileAnalysis:
     if extension.lower() in data_preview.ALL_DATA_EXTENSIONS:
         return analyze_data_file(file_info)
 
+    if extension.lower() == ".ipynb":
+        return analyze_notebook_file(
+            file_info,
+            file_cache,
+            include_outputs=include_notebook_outputs,
+        )
+
     if extension.lower() == ".py":
         return analyze_python_file(file_info, file_cache)
 
     # Default for all other text-based files
     content = file_cache.get_content(file_path)
     return FileAnalysis(file_info=file_info, content=content)
+
+
+def analyze_notebook_file(
+    file_info: FileInfo,
+    file_cache: FileCache,
+    include_outputs: bool,
+) -> FileAnalysis:
+    """Convert .ipynb into deterministic LLM-friendly text."""
+    content = file_cache.get_content(file_info.absolute_path)
+    if content is None:
+        return FileAnalysis(
+            file_info=file_info,
+            content="# ERROR: Could not read notebook content.",
+        )
+
+    try:
+        notebook = json.loads(content)
+    except json.JSONDecodeError as e:
+        logger.warning(f"Notebook parse failed for '{file_info.relative_path}': {e}.")
+        return FileAnalysis(
+            file_info=file_info,
+            content=f"# ERROR: Could not parse notebook JSON ({e}).",
+        )
+
+    rendered = _render_notebook_content(
+        notebook,
+        relative_path=file_info.relative_path,
+        include_outputs=include_outputs,
+    )
+    return FileAnalysis(file_info=file_info, content=rendered)
 
 
 def analyze_data_file(file_info: FileInfo) -> FileAnalysis:
@@ -175,3 +217,103 @@ def _append_assign_attributes(item: ast.Assign, attributes: List[str]) -> None:
     for target in item.targets:
         if isinstance(target, ast.Name):
             attributes.append(f"{target.id} = {value_repr}")
+
+
+def _render_notebook_content(
+    notebook: Dict[str, Any],
+    relative_path: str,
+    include_outputs: bool,
+) -> str:
+    """Render notebook cells as deterministic markdown-like text."""
+    cells = notebook.get("cells", []) or []
+    lines: List[str] = [f"# Notebook: {relative_path}", ""]
+
+    for index, cell in enumerate(cells, start=1):
+        cell_type = str(cell.get("cell_type", "unknown"))
+        source_text = _normalize_notebook_text(cell.get("source", ""))
+
+        lines.append(f"## Cell {index} [{cell_type}]")
+        if cell_type == "markdown":
+            lines.append(source_text if source_text else "_(empty markdown cell)_")
+        elif cell_type == "code":
+            lines.append("```python")
+            if source_text:
+                lines.append(source_text)
+            lines.append("```")
+            if include_outputs:
+                rendered_outputs = _render_notebook_outputs(cell.get("outputs", []))
+                if rendered_outputs:
+                    lines.append("")
+                    lines.append("### Outputs")
+                    lines.extend(rendered_outputs)
+        else:
+            lines.append("```text")
+            if source_text:
+                lines.append(source_text)
+            lines.append("```")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _normalize_notebook_text(value: Any) -> str:
+    """Normalize notebook source/output payload to plain text."""
+    if isinstance(value, list):
+        return "".join(str(item) for item in value).strip()
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _render_notebook_outputs(outputs: Any) -> List[str]:
+    """Render notebook outputs in a compact deterministic form."""
+    if not isinstance(outputs, list):
+        return []
+
+    rendered: List[str] = []
+    for index, output in enumerate(outputs, start=1):
+        if not isinstance(output, dict):
+            continue
+        output_type = str(output.get("output_type", "unknown"))
+        rendered.append(f"- Output {index} ({output_type})")
+
+        if output_type == "stream":
+            text = _normalize_notebook_text(output.get("text", ""))
+            if text:
+                rendered.append("```text")
+                rendered.append(text)
+                rendered.append("```")
+            continue
+
+        if output_type in {"execute_result", "display_data"}:
+            data = output.get("data", {})
+            if not isinstance(data, dict):
+                continue
+
+            text_plain = _normalize_notebook_text(data.get("text/plain", ""))
+            if text_plain:
+                rendered.append("```text")
+                rendered.append(text_plain)
+                rendered.append("```")
+
+            for media_key in sorted(data.keys()):
+                if media_key == "text/plain":
+                    continue
+                media_payload = data[media_key]
+                media_text = _normalize_notebook_text(media_payload)
+                rendered.append(
+                    f"[media {media_key}: {len(media_text)} chars]"
+                )
+            continue
+
+        if output_type == "error":
+            name = output.get("ename", "")
+            value = output.get("evalue", "")
+            rendered.append(f"error: {name}: {value}".strip(": "))
+            traceback_text = _normalize_notebook_text(output.get("traceback", ""))
+            if traceback_text:
+                rendered.append("```text")
+                rendered.append(traceback_text)
+                rendered.append("```")
+
+    return rendered

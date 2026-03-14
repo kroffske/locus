@@ -55,9 +55,13 @@ def find_and_read_readme(project_path: str) -> Optional[str]:
 
 def _find_config_root(start_path: str) -> str:
     """Finds the directory to load config from by walking up for .locus or .git.
-    Falls back to current working directory if nothing is found.
+    Falls back to the provided start path if nothing is found.
     """
-    cur = os.path.abspath(start_path)
+    fallback_root = os.path.abspath(start_path)
+    if not os.path.isdir(fallback_root):
+        fallback_root = os.path.dirname(fallback_root)
+
+    cur = fallback_root
     root = os.path.abspath(os.path.sep)
     while True:
         candidates = [
@@ -72,7 +76,7 @@ def _find_config_root(start_path: str) -> str:
         if cur == root:
             break
         cur = os.path.dirname(cur)
-    return os.getcwd()
+    return fallback_root
 
 
 def analyze(
@@ -81,6 +85,7 @@ def analyze(
     max_depth: int,
     include_patterns: Optional[List[str]],
     exclude_patterns: Optional[List[str]],
+    include_notebook_outputs: bool = False,
 ) -> AnalysisResult:
     """Main high-level analysis function orchestrating the entire process."""
     result = AnalysisResult(project_path=project_path, target_specs=target_specs)
@@ -94,6 +99,18 @@ def analyze(
     config_root = _find_config_root(project_path)
     result.config_root_path = config_root
     ignore_patterns, allow_patterns = config.load_project_config(config_root)
+    include_overrides = _normalize_cli_patterns(include_patterns)
+    exclude_overrides = _normalize_cli_patterns(exclude_patterns)
+    if include_overrides:
+        allow_patterns = include_overrides
+        logger.info(f"Using {len(allow_patterns)} include pattern override(s).")
+    if exclude_overrides:
+        ignore_patterns = set(ignore_patterns)
+        ignore_patterns.update(exclude_overrides)
+        logger.info(
+            f"Applied {len(exclude_overrides)} exclude pattern override(s) on top of ignore baseline."
+        )
+
     # Load README from config root
     result.project_readme_content = find_and_read_readme(config_root)
     if not allow_patterns:
@@ -101,6 +118,7 @@ def analyze(
             "**/*.py",
             "**/*.md",
             "**/README*",
+            "**/*.ipynb",
         }  # Default if no allow patterns found
         logger.info(f"No allow patterns found, defaulting to: {allow_patterns}")
 
@@ -212,7 +230,11 @@ def analyze(
         if not file_info:
             continue
         try:
-            analysis_data = processor.process_file(file_info, file_cache)
+            analysis_data = processor.process_file(
+                file_info,
+                file_cache,
+                include_notebook_outputs=include_notebook_outputs,
+            )
             # Attach any requested line ranges for targeted files (ranges apply only to explicit targets)
             if abs_path in selected_ranges_map:
                 # Normalize and merge overlapping ranges
@@ -226,6 +248,13 @@ def analyze(
 
     logger.info(f"Analysis complete. Processed {len(result.required_files)} files.")
     return result
+
+
+def _normalize_cli_patterns(patterns: Optional[List[str]]) -> Set[str]:
+    """Normalize CLI glob list into a de-duplicated pattern set."""
+    if not patterns:
+        return set()
+    return {p.strip() for p in patterns if p and p.strip()}
 
 
 def _merge_line_ranges(ranges: List[tuple]) -> List[tuple]:

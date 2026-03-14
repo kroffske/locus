@@ -1,14 +1,19 @@
+import json
 import logging
 import os
-from typing import Optional, Pattern, Tuple
+from typing import Dict, List, Optional, Pattern, Tuple
 
 from ..core.config import LocusConfig, load_config
 from ..core.modular_export import (
-    check_and_split_large_groups,
-    format_grouped_content,
+    HARD_PART_LINE_CEILING,
+    TARGET_PART_LINES,
+    ExportPart,
+    build_export_parts,
     group_files_by_module,
 )
 from ..models import AnalysisResult, FileAnalysis
+from ..utils import helpers as core_helpers
+from . import tree as tree_formatter
 from .helpers import get_output_content
 
 logger = logging.getLogger(__name__)
@@ -291,58 +296,213 @@ def collect_files_modular(
         )
         return (files_created, None)
 
-    # Group files by module
     groups = group_files_by_module(result, config)
     logger.info(
         f"Grouped {len(result.required_files)} files into {len(groups)} modules"
     )
 
-    # Helper function to get content
-    def get_content(analysis):
+    def get_content(analysis: FileAnalysis) -> Tuple[str, str]:
         return get_output_content(analysis, full_code_re, annotation_re)
 
-    # Check and split large groups
-    groups = check_and_split_large_groups(
+    target_lines = max(1, config.modular_export.max_lines_per_file)
+    if target_lines > HARD_PART_LINE_CEILING:
+        logger.warning(
+            f"Configured max_lines_per_file={target_lines} exceeds hard ceiling "
+            f"{HARD_PART_LINE_CEILING}; clamping target."
+        )
+        target_lines = HARD_PART_LINE_CEILING
+    if target_lines == 0:
+        target_lines = TARGET_PART_LINES
+
+    parts = build_export_parts(
         groups,
-        config.modular_export.max_lines_per_file,
-        get_content,
+        get_content_func=get_content,
+        target_lines=target_lines,
+        hard_max_lines=HARD_PART_LINE_CEILING,
     )
 
-    # Write each group to a file
-    files_created = 0
-    for group_key, files in groups.items():
-        content, line_count = format_grouped_content(files, get_content)
+    written_parts = _write_export_parts(output_dir, parts)
+    manifest = _build_manifest(result, written_parts, target_lines)
+    tree_content = _build_tree_content(result)
+    description_content = _build_description_content(manifest)
+    index_content = _build_index_content(manifest)
 
-        if not content.strip():
-            logger.debug(f"Skipping empty group '{group_key}'")
-            continue
+    _write_text_file(os.path.join(output_dir, "manifest.json"), manifest, as_json=True)
+    _write_text_file(os.path.join(output_dir, "tree.txt"), tree_content)
+    _write_text_file(os.path.join(output_dir, "description.md"), description_content)
+    _write_text_file(os.path.join(output_dir, "index.txt"), index_content)
 
-        # Create output filename
-        output_filename = f"{group_key}.txt"
-        output_path = os.path.join(output_dir, output_filename)
-
-        try:
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(content)
-            files_created += 1
-            logger.info(
-                f"Created '{output_filename}': {line_count} lines from {len(files)} source files"
-            )
-        except OSError as e:
-            logger.error(f"Error writing file {output_path}: {e}")
-
-    # Generate and write index file
-    index_content = None
-    if groups:  # Only generate index if we have groups
-        try:
-            index_content = generate_index_content(groups, get_content)
-            index_path = os.path.join(output_dir, "index.txt")
-            with open(index_path, "w", encoding="utf-8") as f:
-                f.write(index_content)
-            logger.info("Created index file: index.txt")
-        except (ValueError, OSError) as e:
-            logger.error(f"Error writing index file: {e}")
-            index_content = None
-
-    logger.info(f"Created {files_created} modular output files in {output_dir}")
+    files_created = len(written_parts)
+    logger.info(
+        f"Created {files_created} modular part file(s) and package metadata in {output_dir}"
+    )
     return (files_created, index_content)
+
+
+def _write_export_parts(output_dir: str, parts: List[ExportPart]) -> List[Dict]:
+    """Write part files and return serialized part metadata."""
+    written_parts: List[Dict] = []
+    for part in parts:
+        output_path = os.path.join(output_dir, part.filename)
+        content = "\n".join(segment.content for segment in part.segments).rstrip() + "\n"
+        line_count = _count_lines(content.rstrip("\n"))
+        if line_count > HARD_PART_LINE_CEILING:
+            raise ValueError(
+                f"Part '{part.filename}' exceeds hard ceiling: "
+                f"{line_count} > {HARD_PART_LINE_CEILING}"
+            )
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        segment_entries = [
+            {
+                "source_path": segment.source_path,
+                "group_key": segment.group_key,
+                "chunk_index": segment.chunk_index,
+                "chunk_count": segment.chunk_count,
+            }
+            for segment in part.segments
+        ]
+        written_parts.append(
+            {
+                "filename": part.filename,
+                "line_count": line_count,
+                "segments": segment_entries,
+            }
+        )
+        logger.info(
+            f"Created '{part.filename}': {line_count} lines from {len(part.segments)} segment(s)"
+        )
+    return written_parts
+
+
+def _build_manifest(
+    result: AnalysisResult,
+    written_parts: List[Dict],
+    target_lines: int,
+) -> Dict:
+    """Build deterministic manifest payload for the LLM export package."""
+    analysis_by_rel = {
+        analysis.file_info.relative_path: analysis
+        for analysis in result.required_files.values()
+    }
+
+    file_map: Dict[str, Dict] = {}
+    for part in written_parts:
+        for segment in part["segments"]:
+            source_path = segment["source_path"]
+            analysis = analysis_by_rel.get(source_path)
+            file_entry = file_map.setdefault(
+                source_path,
+                {
+                    "path": source_path,
+                    "module": analysis.file_info.module_name if analysis else None,
+                    "description": _extract_file_description(analysis)
+                    if analysis
+                    else "No description available",
+                    "parts": [],
+                    "chunk_count": 0,
+                },
+            )
+            file_entry["parts"].append(part["filename"])
+            file_entry["chunk_count"] += 1
+
+    files = []
+    for source_path in sorted(file_map.keys()):
+        entry = file_map[source_path]
+        entry["parts"] = sorted(set(entry["parts"]))
+        files.append(entry)
+
+    return {
+        "format": "locus-llm-package-v1",
+        "target_lines_per_part": target_lines,
+        "hard_max_lines_per_part": HARD_PART_LINE_CEILING,
+        "parts": written_parts,
+        "files": files,
+        "totals": {
+            "source_files": len(files),
+            "parts": len(written_parts),
+        },
+    }
+
+
+def _build_tree_content(result: AnalysisResult) -> str:
+    """Render tree.txt for exported files only."""
+    file_infos = sorted(
+        [analysis.file_info for analysis in result.required_files.values()],
+        key=lambda info: info.relative_path.lower(),
+    )
+    if not file_infos:
+        return "# Export Tree\n\n_(no files exported)_\n"
+
+    file_tree = core_helpers.build_file_tree(file_infos)
+    body = tree_formatter.format_tree_markdown(
+        file_tree,
+        result.required_files,
+        include_comments=False,
+        ascii_tree=True,
+    )
+    return "\n".join(["# Export Tree", "", body, ""])
+
+
+def _build_description_content(manifest: Dict) -> str:
+    """Create human-readable package description surface."""
+    totals = manifest.get("totals", {})
+    return "\n".join(
+        [
+            "# Locus LLM Export Package",
+            "",
+            "This directory contains a deterministic code export package for LLM/tool usage.",
+            "",
+            f"- Source files: {totals.get('source_files', 0)}",
+            f"- Parts: {totals.get('parts', 0)}",
+            f"- Target lines per part: {manifest.get('target_lines_per_part')}",
+            f"- Hard max lines per part: {manifest.get('hard_max_lines_per_part')}",
+            "",
+            "Package surfaces:",
+            "- `manifest.json` - machine-readable package and chunk mapping",
+            "- `tree.txt` - exported source tree",
+            "- `description.md` - package summary",
+            "- `part-*.txt` - chunked source payloads",
+            "- `index.txt` - quick grep-friendly lookup table",
+            "",
+        ]
+    )
+
+
+def _build_index_content(manifest: Dict) -> str:
+    """Create compatibility index lookup from manifest data."""
+    lines = [
+        "# Locus Export Index",
+        "# ===================",
+        "#",
+        "# Quick Search Tips:",
+        '#   Find file:      grep "^## " index.txt | grep "filename"',
+        '#   Find part:      grep "Part:" index.txt | grep "part-0001"',
+        '#   List all files: grep "^## " index.txt',
+        "",
+    ]
+
+    for file_entry in manifest.get("files", []):
+        part_list = ", ".join(file_entry.get("parts", [])) or "N/A"
+        lines.extend(
+            [
+                f"## {file_entry.get('path', 'N/A')}",
+                f"   Module: {file_entry.get('module') or 'N/A'}",
+                f"   Description: {file_entry.get('description') or 'N/A'}",
+                f"   Part: {part_list}",
+                "",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def _write_text_file(path: str, payload, as_json: bool = False) -> None:
+    """Write text/json payload with UTF-8 encoding."""
+    with open(path, "w", encoding="utf-8") as f:
+        if as_json:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        else:
+            f.write(payload)

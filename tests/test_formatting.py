@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+from locus.core.config import LocusConfig, ModularExportConfig
 from locus.formatting import code, helpers, tree
 from locus.models import (
     AnalysisResult,
@@ -230,3 +234,80 @@ def test_count_lines():
 
     # Test with trailing newline
     assert code._count_lines("line1\nline2\n") == 3
+
+
+def test_collect_files_modular_writes_package_surfaces(tmp_path: Path):
+    """Directory export should emit deterministic package metadata + part files."""
+    out_dir = tmp_path / "export"
+    result = AnalysisResult(project_path="")
+
+    info1 = FileInfo(absolute_path="", relative_path="src/a.py", filename="a.py")
+    analysis1 = FileAnalysis(file_info=info1, content="def a():\n    return 1\n")
+    info2 = FileInfo(absolute_path="", relative_path="src/b.py", filename="b.py")
+    analysis2 = FileAnalysis(file_info=info2, content="def b():\n    return 2\n")
+    result.required_files = {"a": analysis1, "b": analysis2}
+
+    config = LocusConfig(
+        modular_export=ModularExportConfig(
+            enabled=True,
+            max_lines_per_file=20,
+            grouping_rules=[],
+            default_depth=1,
+        )
+    )
+
+    files_created, index_content = code.collect_files_modular(
+        result,
+        str(out_dir),
+        config=config,
+    )
+
+    assert files_created >= 1
+    assert index_content is not None
+    assert (out_dir / "manifest.json").exists()
+    assert (out_dir / "tree.txt").exists()
+    assert (out_dir / "description.md").exists()
+    assert (out_dir / "index.txt").exists()
+
+    part_files = sorted(path.name for path in out_dir.glob("part-*.txt"))
+    assert part_files
+    assert part_files == sorted(part_files)
+
+    manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["format"] == "locus-llm-package-v1"
+    assert manifest["totals"]["source_files"] == 2
+    assert manifest["totals"]["parts"] == len(part_files)
+
+
+def test_collect_files_modular_splits_oversized_file_with_hard_ceiling(
+    tmp_path: Path,
+):
+    """Oversized single files should be split into continuation parts <= 10k lines."""
+    out_dir = tmp_path / "export_big"
+    result = AnalysisResult(project_path="")
+
+    big_lines = "\n".join(f"line_{i}" for i in range(1, 12051))
+    info = FileInfo(absolute_path="", relative_path="src/big.py", filename="big.py")
+    analysis = FileAnalysis(file_info=info, content=big_lines)
+    result.required_files = {"big": analysis}
+
+    config = LocusConfig(
+        modular_export=ModularExportConfig(
+            enabled=True,
+            max_lines_per_file=5000,
+            grouping_rules=[],
+            default_depth=1,
+        )
+    )
+
+    files_created, _ = code.collect_files_modular(result, str(out_dir), config=config)
+
+    assert files_created >= 2
+    manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["totals"]["parts"] >= 2
+    assert all(part["line_count"] <= 10000 for part in manifest["parts"])
+
+    part_payload = "\n".join(
+        p.read_text(encoding="utf-8") for p in sorted(out_dir.glob("part-*.txt"))
+    )
+    assert "(continued 2/" in part_payload

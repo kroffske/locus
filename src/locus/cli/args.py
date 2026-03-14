@@ -204,6 +204,11 @@ def parse_arguments() -> argparse.Namespace:
     output_formatting.add_argument(
         "--annotation-regex", metavar="REGEX", help=argparse.SUPPRESS
     )
+    output_formatting.add_argument(
+        "--notebook-outputs",
+        action="store_true",
+        help="Include Jupyter notebook outputs/media in exported notebook content",
+    )
 
     # Content Style Group for Analyze
     content_style = analyze_parser.add_argument_group("Content Style (advanced)")
@@ -488,6 +493,10 @@ def parse_arguments() -> argparse.Namespace:
             (
                 "",
                 "  --exclude PATTERN  Glob patterns to exclude (e.g., 'tests/**' '**/migrations/**')",
+            ),
+            (
+                "",
+                "  --notebook-outputs Include .ipynb outputs/media (default exports cells only)",
             ),
             ("", "  --ascii-tree      ASCII connectors for tree"),
             ("", ""),

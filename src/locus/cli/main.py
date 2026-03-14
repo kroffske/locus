@@ -37,10 +37,14 @@ def handle_analyze_command(args):
     # Determine mode based on output
     if not args.output:
         mode = "interactive"
-    elif os.path.splitext(args.output)[1]:  # Has extension
-        mode = "report"
     else:
-        mode = "collection"
+        # Existing directories always use collection mode, even with dots in name.
+        if os.path.isdir(args.output):
+            mode = "collection"
+        elif os.path.splitext(args.output)[1]:  # Has extension
+            mode = "report"
+        else:
+            mode = "collection"
 
     logger.debug(f"Operating in {mode} mode")
 
@@ -65,6 +69,7 @@ def handle_analyze_command(args):
         max_depth=args.depth,
         include_patterns=args.include,
         exclude_patterns=args.exclude,
+        include_notebook_outputs=getattr(args, "notebook_outputs", False),
     )
 
     # Optional similarity pass
@@ -229,6 +234,12 @@ def handle_analyze_command(args):
         elif mode == "collection":
             # Collection mode: write to directory (with modular grouping)
             output_path = args.output
+            if os.path.exists(output_path) and not os.path.isdir(output_path):
+                logger.error(
+                    f"Output path '{output_path}' exists and is not a directory. "
+                    "Use a directory path for modular export."
+                )
+                return 1
             files_created, index_content = code.collect_files_modular(
                 result, output_path, full_code_re, annotation_re
             )

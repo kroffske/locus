@@ -40,13 +40,26 @@ def scan_directory(
                 continue
 
             rel_path_norm = rel_path.replace("\\", "/")
-            if any(
-                fnmatch.fnmatch(rel_path_norm, pattern)
-                or fnmatch.fnmatch(os.path.basename(rel_path_norm), pattern)
-                for pattern in allow_patterns
-            ):
+            if any(_matches_allow_pattern(rel_path_norm, pattern) for pattern in allow_patterns):
                 candidate_files.append(abs_path)
 
     unique_files = sorted(list(set(candidate_files)))
     logger.info(f"Scan found {len(unique_files)} files matching allow patterns.")
     return unique_files
+
+
+def _matches_allow_pattern(relative_path: str, pattern: str) -> bool:
+    """Return True when a file path matches an allow pattern."""
+    basename = os.path.basename(relative_path)
+    if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(basename, pattern):
+        return True
+
+    # Treat "**/name.ext" as also matching root-level "name.ext".
+    if pattern.startswith("**/"):
+        alt_pattern = pattern[3:]
+        if fnmatch.fnmatch(relative_path, alt_pattern) or fnmatch.fnmatch(
+            basename, alt_pattern
+        ):
+            return True
+
+    return False
