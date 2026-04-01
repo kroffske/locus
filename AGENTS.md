@@ -6,9 +6,9 @@
   1. `README.md`
   2. `.miloc/docs/ASSEMBLY.md`
   3. `.miloc/docs/SYSTEM_DESIGN.md`
-  4. `CONTRIBUTING.md`
-  5. `TESTS.md`
-  6. `ARCHITECTURE.md`
+  4. `.miloc/docs/CONTRIBUTING.md`
+  5. `.miloc/docs/TESTS.md`
+  6. `.miloc/docs/ARCHITECTURE.md`
 </project>
 
 <scope>
@@ -55,8 +55,8 @@
 
 ## Pointers
 
-- Contributor setup and commands: `CONTRIBUTING.md`
-- Test strategy: `TESTS.md`
-- Architecture principles: `ARCHITECTURE.md`
+- Contributor setup and commands: `.miloc/docs/CONTRIBUTING.md`
+- Test strategy: `.miloc/docs/TESTS.md`
+- Architecture principles: `.miloc/docs/ARCHITECTURE.md`
 - Repo map: `.miloc/docs/ASSEMBLY.md`
 - Deep design: `.miloc/docs/SYSTEM_DESIGN.md`

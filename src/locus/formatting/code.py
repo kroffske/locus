@@ -1,6 +1,9 @@
 import json
 import logging
 import os
+import subprocess
+import sys
+from pathlib import Path
 from typing import Dict, List, Optional, Pattern, Tuple
 
 from ..core.config import LocusConfig, load_config
@@ -14,7 +17,7 @@ from ..core.modular_export import (
 from ..models import AnalysisResult, FileAnalysis
 from ..utils import helpers as core_helpers
 from . import tree as tree_formatter
-from .helpers import get_output_content
+from .helpers import get_output_content, get_summary_from_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -246,21 +249,24 @@ def _extract_file_description(analysis: FileAnalysis) -> str:
     Returns:
         Description string (first non-empty comment or first line of docstring)
     """
-    # Try module docstring first
     if analysis.annotations and analysis.annotations.module_docstring:
-        docstring = analysis.annotations.module_docstring.strip()
-        # Get first line
-        first_line = docstring.split("\n")[0].strip()
-        if first_line:
-            return first_line
+        summary = get_summary_from_analysis(analysis)
+        if summary:
+            return summary
 
-    # Try top comments
     if analysis.comments:
         for comment in analysis.comments:
             if comment.strip():
                 return comment.strip()
 
-    return "No description available"
+    summary = get_summary_from_analysis(
+        FileAnalysis(
+            file_info=analysis.file_info,
+            annotations=analysis.annotations,
+            content=analysis.content,
+        )
+    )
+    return summary or "No description available"
 
 
 def collect_files_modular(
@@ -268,6 +274,7 @@ def collect_files_modular(
     output_dir: str,
     full_code_re: Optional[Pattern] = None,
     annotation_re: Optional[Pattern] = None,
+    render_notebook_markdown: bool = False,
     config: Optional[LocusConfig] = None,
 ) -> Tuple[int, Optional[str]]:
     """Collects analyzed files into an output directory with modular grouping.
@@ -277,6 +284,7 @@ def collect_files_modular(
         output_dir: Output directory path
         full_code_re: Regex for full code extraction
         annotation_re: Regex for annotation extraction
+        render_notebook_markdown: Render .ipynb files via nbconvert as markdown sidecars
         config: Locus configuration (loaded if not provided)
 
     Returns:
@@ -322,7 +330,16 @@ def collect_files_modular(
     )
 
     written_parts = _write_export_parts(output_dir, parts)
-    manifest = _build_manifest(result, written_parts, target_lines)
+    rendered_notebooks = []
+    if render_notebook_markdown:
+        rendered_notebooks = _render_notebook_markdown_exports(result, output_dir)
+
+    manifest = _build_manifest(
+        result,
+        written_parts,
+        target_lines,
+        rendered_notebooks,
+    )
     tree_content = _build_tree_content(result)
     description_content = _build_description_content(manifest)
     index_content = _build_index_content(manifest)
@@ -337,6 +354,75 @@ def collect_files_modular(
         f"Created {files_created} modular part file(s) and package metadata in {output_dir}"
     )
     return (files_created, index_content)
+
+
+def _render_notebook_markdown_exports(
+    result: AnalysisResult,
+    output_dir: str,
+) -> List[Dict[str, str]]:
+    """Render exported notebooks to markdown with extracted assets via nbconvert."""
+    notebook_analyses = sorted(
+        (
+            analysis
+            for analysis in result.required_files.values()
+            if analysis.file_info.filename.endswith(".ipynb")
+        ),
+        key=lambda analysis: analysis.file_info.relative_path.lower(),
+    )
+    if not notebook_analyses:
+        return []
+
+    rendered_exports: List[Dict[str, str]] = []
+    render_root = Path(output_dir) / "rendered"
+
+    for analysis in notebook_analyses:
+        relative_path = analysis.file_info.relative_path
+        relative_dir = os.path.dirname(relative_path)
+        notebook_stem = Path(relative_path).stem
+        target_dir = render_root / relative_dir
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        command = [
+            sys.executable,
+            "-m",
+            "jupyter",
+            "nbconvert",
+            "--to",
+            "markdown",
+            analysis.file_info.absolute_path,
+            "--output",
+            notebook_stem,
+            "--output-dir",
+            str(target_dir),
+        ]
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if completed.returncode != 0:
+            error_text = completed.stderr.strip() or completed.stdout.strip()
+            raise OSError(
+                f"Failed to render notebook markdown for '{relative_path}': {error_text}"
+            )
+
+        markdown_path = _normalize_export_path(
+            os.path.join("rendered", relative_dir, f"{notebook_stem}.md")
+        )
+        assets_dir = os.path.join("rendered", relative_dir, f"{notebook_stem}_files")
+        entry = {
+            "source_path": _normalize_export_path(relative_path),
+            "markdown_path": markdown_path,
+        }
+        if os.path.isdir(Path(output_dir) / assets_dir):
+            entry["assets_dir"] = _normalize_export_path(assets_dir)
+        rendered_exports.append(entry)
+        logger.info(
+            f"Rendered notebook markdown for '{relative_path}' to '{markdown_path}'"
+        )
+
+    return rendered_exports
 
 
 def _write_export_parts(output_dir: str, parts: List[ExportPart]) -> List[Dict]:
@@ -381,17 +467,21 @@ def _build_manifest(
     result: AnalysisResult,
     written_parts: List[Dict],
     target_lines: int,
+    rendered_notebooks: Optional[List[Dict[str, str]]] = None,
 ) -> Dict:
     """Build deterministic manifest payload for the LLM export package."""
     analysis_by_rel = {
-        analysis.file_info.relative_path: analysis
+        _normalize_export_path(analysis.file_info.relative_path): analysis
         for analysis in result.required_files.values()
+    }
+    rendered_map = {
+        entry["source_path"]: entry for entry in (rendered_notebooks or [])
     }
 
     file_map: Dict[str, Dict] = {}
     for part in written_parts:
         for segment in part["segments"]:
-            source_path = segment["source_path"]
+            source_path = _normalize_export_path(segment["source_path"])
             analysis = analysis_by_rel.get(source_path)
             file_entry = file_map.setdefault(
                 source_path,
@@ -412,6 +502,11 @@ def _build_manifest(
     for source_path in sorted(file_map.keys()):
         entry = file_map[source_path]
         entry["parts"] = sorted(set(entry["parts"]))
+        rendered_entry = rendered_map.get(source_path)
+        if rendered_entry:
+            entry["rendered_markdown"] = rendered_entry["markdown_path"]
+            if rendered_entry.get("assets_dir"):
+                entry["rendered_assets_dir"] = rendered_entry["assets_dir"]
         files.append(entry)
 
     return {
@@ -420,9 +515,11 @@ def _build_manifest(
         "hard_max_lines_per_part": HARD_PART_LINE_CEILING,
         "parts": written_parts,
         "files": files,
+        "rendered_notebooks": rendered_notebooks or [],
         "totals": {
             "source_files": len(files),
             "parts": len(written_parts),
+            "rendered_notebooks": len(rendered_notebooks or []),
         },
     }
 
@@ -440,7 +537,7 @@ def _build_tree_content(result: AnalysisResult) -> str:
     body = tree_formatter.format_tree_markdown(
         file_tree,
         result.required_files,
-        include_comments=False,
+        include_comments=True,
         ascii_tree=True,
     )
     return "\n".join(["# Export Tree", "", body, ""])
@@ -449,26 +546,51 @@ def _build_tree_content(result: AnalysisResult) -> str:
 def _build_description_content(manifest: Dict) -> str:
     """Create human-readable package description surface."""
     totals = manifest.get("totals", {})
-    return "\n".join(
-        [
-            "# Locus LLM Export Package",
-            "",
-            "This directory contains a deterministic code export package for LLM/tool usage.",
-            "",
-            f"- Source files: {totals.get('source_files', 0)}",
-            f"- Parts: {totals.get('parts', 0)}",
-            f"- Target lines per part: {manifest.get('target_lines_per_part')}",
-            f"- Hard max lines per part: {manifest.get('hard_max_lines_per_part')}",
-            "",
-            "Package surfaces:",
-            "- `manifest.json` - machine-readable package and chunk mapping",
-            "- `tree.txt` - exported source tree",
-            "- `description.md` - package summary",
-            "- `part-*.txt` - chunked source payloads",
-            "- `index.txt` - quick grep-friendly lookup table",
-            "",
-        ]
-    )
+    lines = [
+        "# Locus LLM Export Package",
+        "",
+        "This directory contains a deterministic code export package for LLM/tool usage.",
+        "",
+        f"- Source files: {totals.get('source_files', 0)}",
+        f"- Parts: {totals.get('parts', 0)}",
+        f"- Target lines per part: {manifest.get('target_lines_per_part')}",
+        f"- Hard max lines per part: {manifest.get('hard_max_lines_per_part')}",
+        "",
+        "Package surfaces:",
+        "- `manifest.json` - machine-readable package and chunk mapping",
+        "- `tree.txt` - exported source tree with inline file summaries when available",
+        "- `description.md` - package summary and file descriptions",
+        "- `part-*.txt` - chunked source payloads",
+        "- `index.txt` - quick grep-friendly lookup table",
+    ]
+    if totals.get("rendered_notebooks", 0):
+        lines.append(
+            "- `rendered/` - optional notebook markdown sidecars with extracted assets"
+        )
+    lines.extend(["", "## File Descriptions"])
+
+    files = manifest.get("files", [])
+    if not files:
+        lines.extend(["", "_No files exported._", ""])
+        return "\n".join(lines)
+
+    lines.append("")
+    for file_entry in files:
+        path = file_entry.get("path", "N/A")
+        description = file_entry.get("description", "No description available")
+        parts = ", ".join(file_entry.get("parts", [])) or "N/A"
+        detail_parts = [parts]
+        rendered_markdown = file_entry.get("rendered_markdown")
+        rendered_assets_dir = file_entry.get("rendered_assets_dir")
+        if rendered_markdown:
+            detail_parts.append(rendered_markdown)
+        if rendered_assets_dir:
+            detail_parts.append(rendered_assets_dir)
+        details = "; ".join(detail_parts)
+        lines.append(f"- `{path}` — {description} ({details})")
+
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _build_index_content(manifest: Dict) -> str:
@@ -492,10 +614,25 @@ def _build_index_content(manifest: Dict) -> str:
                 f"   Module: {file_entry.get('module') or 'N/A'}",
                 f"   Description: {file_entry.get('description') or 'N/A'}",
                 f"   Part: {part_list}",
+                (
+                    f"   Rendered Markdown: {file_entry.get('rendered_markdown')}"
+                    if file_entry.get("rendered_markdown")
+                    else None
+                ),
+                (
+                    f"   Rendered Assets: {file_entry.get('rendered_assets_dir')}"
+                    if file_entry.get("rendered_assets_dir")
+                    else None
+                ),
                 "",
             ]
         )
-    return "\n".join(lines)
+    return "\n".join(line for line in lines if line is not None)
+
+
+def _normalize_export_path(path: str) -> str:
+    """Normalize export paths for manifests and docs."""
+    return path.replace(os.sep, "/")
 
 
 def _write_text_file(path: str, payload, as_json: bool = False) -> None:

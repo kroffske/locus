@@ -77,6 +77,17 @@ def test_get_output_content():
     assert "def my_func(...): ..." in stub_content
 
 
+def test_get_summary_from_markdown_content():
+    """Markdown files should expose a tree/description summary from the first heading."""
+    info = FileInfo(absolute_path="", relative_path="README.md", filename="README.md")
+    analysis = FileAnalysis(
+        file_info=info,
+        content="# Locus Title\n\nMore details below.\n",
+    )
+
+    assert helpers.get_summary_from_analysis(analysis) == "Locus Title"
+
+
 def test_format_code_collection():
     """Test the aggregation of files into a single string."""
     info1 = FileInfo(absolute_path="", relative_path="a.py", filename="a.py")
@@ -125,7 +136,7 @@ def test_extract_file_description():
     analysis1 = FileAnalysis(file_info=info1, annotations=ann1)
 
     description1 = code._extract_file_description(analysis1)
-    assert description1 == "This is a module."
+    assert description1 == "This is a module"
 
     # Test with comments
     info2 = FileInfo(
@@ -242,10 +253,17 @@ def test_collect_files_modular_writes_package_surfaces(tmp_path: Path):
     result = AnalysisResult(project_path="")
 
     info1 = FileInfo(absolute_path="", relative_path="src/a.py", filename="a.py")
-    analysis1 = FileAnalysis(file_info=info1, content="def a():\n    return 1\n")
-    info2 = FileInfo(absolute_path="", relative_path="src/b.py", filename="b.py")
-    analysis2 = FileAnalysis(file_info=info2, content="def b():\n    return 2\n")
-    result.required_files = {"a": analysis1, "b": analysis2}
+    analysis1 = FileAnalysis(
+        file_info=info1,
+        content="def a():\n    return 1\n",
+        annotations=AnnotationInfo(module_docstring="Alpha module."),
+    )
+    info2 = FileInfo(absolute_path="", relative_path="README.md", filename="README.md")
+    analysis2 = FileAnalysis(
+        file_info=info2,
+        content="# Readme heading\n\nSome docs.\n",
+    )
+    result.required_files = {"a": analysis1, "readme": analysis2}
 
     config = LocusConfig(
         modular_export=ModularExportConfig(
@@ -277,6 +295,14 @@ def test_collect_files_modular_writes_package_surfaces(tmp_path: Path):
     assert manifest["format"] == "locus-llm-package-v1"
     assert manifest["totals"]["source_files"] == 2
     assert manifest["totals"]["parts"] == len(part_files)
+
+    tree_content = (out_dir / "tree.txt").read_text(encoding="utf-8")
+    assert "a.py  # Alpha module" in tree_content
+    assert "README.md  # Readme heading" in tree_content
+
+    description_content = (out_dir / "description.md").read_text(encoding="utf-8")
+    assert "`src/a.py` — Alpha module" in description_content
+    assert "`README.md` — Readme heading" in description_content
 
 
 def test_collect_files_modular_splits_oversized_file_with_hard_ceiling(
@@ -311,3 +337,95 @@ def test_collect_files_modular_splits_oversized_file_with_hard_ceiling(
         p.read_text(encoding="utf-8") for p in sorted(out_dir.glob("part-*.txt"))
     )
     assert "(continued 2/" in part_payload
+
+
+def test_collect_files_modular_renders_notebook_markdown_sidecars(
+    tmp_path: Path,
+    monkeypatch,
+):
+    """Notebook markdown rendering should emit sidecar markdown + assets paths."""
+    out_dir = tmp_path / "export"
+    nb_path = tmp_path / "notebooks" / "sample.ipynb"
+    nb_path.parent.mkdir(parents=True)
+    nb_path.write_text("{}", encoding="utf-8")
+
+    result = AnalysisResult(project_path="")
+    info = FileInfo(
+        absolute_path=str(nb_path),
+        relative_path="notebooks/sample.ipynb",
+        filename="sample.ipynb",
+    )
+    analysis = FileAnalysis(
+        file_info=info,
+        content="# Notebook: notebooks/sample.ipynb\n\n## Cell 1 [markdown]\n# Title\n",
+    )
+    result.required_files = {"nb": analysis}
+
+    config = LocusConfig(
+        modular_export=ModularExportConfig(
+            enabled=True,
+            max_lines_per_file=20,
+            grouping_rules=[],
+            default_depth=1,
+        )
+    )
+
+    def fake_run(command, capture_output, text, check):
+        assert command[:5] == [
+            code.sys.executable,
+            "-m",
+            "jupyter",
+            "nbconvert",
+            "--to",
+        ]
+        output_dir = Path(command[-1])
+        output_name = command[-3]
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / f"{output_name}.md").write_text("# Rendered notebook\n", encoding="utf-8")
+        assets_dir = output_dir / f"{output_name}_files"
+        assets_dir.mkdir()
+        (assets_dir / "plot.png").write_bytes(b"png")
+
+        class Result:
+            returncode = 0
+            stderr = ""
+            stdout = "ok"
+
+        return Result()
+
+    monkeypatch.setattr(code.subprocess, "run", fake_run)
+
+    files_created, index_content = code.collect_files_modular(
+        result,
+        str(out_dir),
+        render_notebook_markdown=True,
+        config=config,
+    )
+
+    assert files_created == 1
+    assert index_content is not None
+    assert (out_dir / "rendered" / "notebooks" / "sample.md").exists()
+    assert (out_dir / "rendered" / "notebooks" / "sample_files" / "plot.png").exists()
+
+    manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["totals"]["rendered_notebooks"] == 1
+    assert manifest["rendered_notebooks"] == [
+        {
+            "source_path": "notebooks/sample.ipynb",
+            "markdown_path": "rendered/notebooks/sample.md",
+            "assets_dir": "rendered/notebooks/sample_files",
+        }
+    ]
+    assert manifest["files"][0]["rendered_markdown"] == "rendered/notebooks/sample.md"
+    assert (
+        manifest["files"][0]["rendered_assets_dir"]
+        == "rendered/notebooks/sample_files"
+    )
+
+    description_content = (out_dir / "description.md").read_text(encoding="utf-8")
+    assert "rendered/notebooks/sample.md" in description_content
+    assert "rendered/notebooks/sample_files" in description_content
+
+    index_content = (out_dir / "index.txt").read_text(encoding="utf-8")
+    assert "Rendered Markdown: rendered/notebooks/sample.md" in index_content
+    assert "Rendered Assets: rendered/notebooks/sample_files" in index_content

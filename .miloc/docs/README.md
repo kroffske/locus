@@ -10,6 +10,9 @@ This folder is the repo-local **technical documentation root** for humans and ag
 ## What belongs here (default)
 - `ASSEMBLY.md` — short “read first” map of the repo (aim: ~100 lines).
 - `SYSTEM_DESIGN.md` — deep technical map + PlantUML diagrams + build/verify commands.
+- `CONTRIBUTING.md` — contributor workflow and setup guide moved out of repo root.
+- `ARCHITECTURE.md` — architecture principles reference moved out of repo root.
+- `TESTS.md` — testing guide moved out of repo root.
 
 Generate/update these via `miloc-docmap` and `system-design-document`:
 - workflow: `~/.miloc/workflow/miloc-docmap/docmap.md`

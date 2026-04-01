@@ -25,9 +25,9 @@ commit: "fab3afa"
 ## Read This With
 1. `.miloc/docs/ASSEMBLY.md`
 2. `README.md`
-3. `CONTRIBUTING.md`
-4. `ARCHITECTURE.md`
-5. `TESTS.md`
+3. `.miloc/docs/CONTRIBUTING.md`
+4. `.miloc/docs/ARCHITECTURE.md`
+5. `.miloc/docs/TESTS.md`
 6. `src/locus/similarity/README.md`
 
 ## System Context
@@ -195,9 +195,9 @@ Fmt --> User: tree/report/export
 
 ## Reference Pages / Existing Docs
 - `README.md` — product overview and common CLI usage
-- `CONTRIBUTING.md` — setup, quality, and workflow commands
-- `ARCHITECTURE.md` — repo-level design guidelines
-- `TESTS.md` — testing philosophy and patterns
+- `.miloc/docs/CONTRIBUTING.md` — setup, quality, and workflow commands
+- `.miloc/docs/ARCHITECTURE.md` — repo-level design guidelines
+- `.miloc/docs/TESTS.md` — testing philosophy and patterns
 - `src/locus/similarity/README.md` — detailed similarity feature notes and benchmark guidance
 
 ## How to Extend / Where to Add Features

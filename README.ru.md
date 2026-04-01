@@ -268,13 +268,13 @@ ruff format src/ tests/
 - `make test` - Запуск основных тестов
 - `make quality` - Линтинг + форматирование + тесты
 
-См. [CONTRIBUTING.md](CONTRIBUTING.md) для подробного руководства по разработке.
+См. [.miloc/docs/CONTRIBUTING.md](.miloc/docs/CONTRIBUTING.md) для подробного руководства по разработке.
 
 ## 📚 Документация
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Настройка разработки и рабочий процесс
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Дизайн системы и паттерны
-- [TESTS.md](TESTS.md) - Стратегия тестирования
+- [.miloc/docs/CONTRIBUTING.md](.miloc/docs/CONTRIBUTING.md) - Настройка разработки и рабочий процесс
+- [.miloc/docs/ARCHITECTURE.md](.miloc/docs/ARCHITECTURE.md) - Дизайн системы и паттерны
+- [.miloc/docs/TESTS.md](.miloc/docs/TESTS.md) - Стратегия тестирования
 - [AGENTS.md](AGENTS.md) - Руководство для AI-агентов
 - [.miloc/docs/ASSEMBLY.md](.miloc/docs/ASSEMBLY.md) - Короткая карта репозитория
 - [.miloc/docs/SYSTEM_DESIGN.md](.miloc/docs/SYSTEM_DESIGN.md) - Подробная архитектурная карта
@@ -302,7 +302,7 @@ MIT
 
 ## 🤝 Вклад в проект
 
-Мы приветствуем вклад! Пожалуйста, см. [CONTRIBUTING.md](CONTRIBUTING.md) для руководства.
+Мы приветствуем вклад! Пожалуйста, см. [.miloc/docs/CONTRIBUTING.md](.miloc/docs/CONTRIBUTING.md) для руководства.
 
 ## 💡 Советы
 

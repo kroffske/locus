@@ -42,9 +42,9 @@ commit: "fab3afa"
 
 ## Existing refs
 - `README.md`
-- `CONTRIBUTING.md`
-- `ARCHITECTURE.md`
-- `TESTS.md`
+- `.miloc/docs/CONTRIBUTING.md`
+- `.miloc/docs/ARCHITECTURE.md`
+- `.miloc/docs/TESTS.md`
 - `src/locus/similarity/README.md`
 - `AGENTS.md`
 

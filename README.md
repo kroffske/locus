@@ -26,8 +26,11 @@ pip install -e .
 ### Basic Usage
 
 ```bash
-# Analyze project and view in terminal
+# Export an LLM package into .local/locus-*
 locus analyze
+
+# Analyze project and view in terminal
+locus analyze --stdout
 
 # Export to Markdown report
 locus analyze -o report.md
@@ -45,10 +48,10 @@ locus analyze src/ -o context.md
 
 ```bash
 # Interactive view with summaries
-locus analyze -p
+locus analyze --stdout -p
 
 # Show flat file list (grep-friendly)
-locus analyze -p -f
+locus analyze --stdout -p -f
 ```
 
 ### 2. Export for LLM Chat
@@ -83,6 +86,9 @@ locus analyze -o context --exclude "tests/**" "**/migrations/**"
 
 # Include notebook outputs/media explicitly (default is cells-only export)
 locus analyze -o context --include "**/*.ipynb" --notebook-outputs
+
+# Render notebooks to markdown with extracted PNG/assets via nbconvert
+locus analyze -o context --include "**/*.ipynb" --notebook-markdown
 
 # Limit import depth
 locus analyze src/main.py -d 2 -o context.md
@@ -238,6 +244,7 @@ def get_profile(user_id):
 | `-d, --depth N` | Import depth: 0=off, 1=direct, 2=nested, -1=unlimited |
 | `--include PATTERN` | Glob patterns to include (e.g., `**/*.py`) |
 | `--exclude PATTERN` | Glob patterns to exclude (e.g., `tests/**`) |
+| `--notebook-markdown` | Render `.ipynb` to markdown sidecars with extracted assets |
 
 ## 🛠️ Development
 

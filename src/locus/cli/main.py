@@ -1,6 +1,8 @@
 import logging
 import os
 import sys
+from datetime import datetime
+from pathlib import Path
 
 from ..core.orchestrator import analyze
 from ..formatting import code, report, tree
@@ -23,6 +25,20 @@ from .args import parse_arguments, parse_target_specifier
 logger = logging.getLogger(__name__)
 
 
+def _default_collection_output_path(project_root: str) -> str:
+    """Build a unique default export directory under .local/locus-*."""
+    local_root = Path(project_root) / ".local"
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    candidate = local_root / f"locus-{timestamp}"
+    suffix = 2
+
+    while candidate.exists():
+        candidate = local_root / f"locus-{timestamp}-{suffix}"
+        suffix += 1
+
+    return str(candidate)
+
+
 def handle_analyze_command(args):
     """Orchestrates the 'analyze' command workflow."""
     # Handle deprecated --generate-summary
@@ -34,12 +50,19 @@ def handle_analyze_command(args):
             args.output = args.generate_summary
             args.style = "minimal"
 
-    # Determine mode based on output
-    if not args.output:
+    if args.output and getattr(args, "stdout", False):
+        logger.error("`--stdout` cannot be used together with `--output`.")
+        return 1
+
+    # Determine mode based on explicit CLI intent.
+    if getattr(args, "stdout", False):
         mode = "interactive"
     else:
+        # Default path without -o writes an export package to .local/locus-*.
+        if not args.output:
+            mode = "collection"
         # Existing directories always use collection mode, even with dots in name.
-        if os.path.isdir(args.output):
+        elif os.path.isdir(args.output):
             mode = "collection"
         elif os.path.splitext(args.output)[1]:  # Has extension
             mode = "report"
@@ -99,6 +122,11 @@ def handle_analyze_command(args):
         include_root_docs = True
     if args.skip_readme:
         include_readme = False
+
+    output_path = args.output
+    if mode == "collection" and not output_path:
+        output_path = _default_collection_output_path(result.config_root_path)
+        logger.info(f"No output path provided. Using default export dir: {output_path}")
 
     # Validate option combinations
     if mode == "collection" and args.style == "annotations":
@@ -177,8 +205,6 @@ def handle_analyze_command(args):
 
         elif mode == "report":
             # Report mode: write to file
-            output_path = args.output
-
             # Determine what to include based on style
             include_code = args.style == "full"
             include_annotations = args.style == "annotations" or args.annotations
@@ -233,7 +259,6 @@ def handle_analyze_command(args):
 
         elif mode == "collection":
             # Collection mode: write to directory (with modular grouping)
-            output_path = args.output
             if os.path.exists(output_path) and not os.path.isdir(output_path):
                 logger.error(
                     f"Output path '{output_path}' exists and is not a directory. "
@@ -241,7 +266,11 @@ def handle_analyze_command(args):
                 )
                 return 1
             files_created, index_content = code.collect_files_modular(
-                result, output_path, full_code_re, annotation_re
+                result,
+                output_path,
+                full_code_re,
+                annotation_re,
+                getattr(args, "notebook_markdown", False),
             )
 
             # Print index to console if available (orchestration layer)

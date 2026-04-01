@@ -20,6 +20,43 @@ def get_summary_from_analysis(analysis: Optional[FileAnalysis]) -> Optional[str]
         joined = " ".join((c or "").strip() for c in analysis.comments)
         return joined.strip() or None
 
+    content_summary = _extract_content_summary(analysis)
+    if content_summary:
+        return content_summary
+
+    return None
+
+
+def _extract_content_summary(analysis: FileAnalysis) -> Optional[str]:
+    """Best-effort summary fallback from the file content itself."""
+    if not analysis.content:
+        return None
+
+    filename = analysis.file_info.filename.lower()
+    lines = analysis.content.splitlines()
+    if lines and lines[0].lower().startswith("# source:"):
+        lines = lines[1:]
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        # Markdown-ish text files: use the first heading/meaningful line.
+        if filename.endswith((".md", ".rst", ".txt")):
+            if line.startswith("#"):
+                line = line.lstrip("#").strip()
+            return _extract_first_sentence(line)
+
+        # Generic comment-like fallbacks for non-Python text files.
+        if line.startswith("//"):
+            return _extract_first_sentence(line.lstrip("/").strip())
+        if line.startswith("<!--") and line.endswith("-->"):
+            return _extract_first_sentence(line[4:-3].strip())
+        if line.startswith("#") and not filename.endswith(".py"):
+            return _extract_first_sentence(line.lstrip("#").strip())
+        break
+
     return None
 
 

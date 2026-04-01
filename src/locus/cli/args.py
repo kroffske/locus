@@ -137,7 +137,7 @@ def parse_arguments() -> argparse.Namespace:
         "-o",
         "--output",
         help=(
-            "Output destination (optional). Write to a file (.md) or directory; if omitted, the report is printed to stdout (console)."
+            "Output destination (optional). Write to a file (.md) or directory; if omitted, an export package is written under .local/locus-*."
         ),
     )
     # File Selection Group for Analyze
@@ -208,6 +208,16 @@ def parse_arguments() -> argparse.Namespace:
         "--notebook-outputs",
         action="store_true",
         help="Include Jupyter notebook outputs/media in exported notebook content",
+    )
+    output_formatting.add_argument(
+        "--notebook-markdown",
+        action="store_true",
+        help="Render exported .ipynb files to markdown with extracted assets via nbconvert",
+    )
+    output_formatting.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Print analysis to stdout instead of writing the default .local/locus-* export package",
     )
 
     # Content Style Group for Analyze
@@ -463,7 +473,8 @@ def parse_arguments() -> argparse.Namespace:
             ("", "Targets: dir, file, or file:lines (e.g., src/ or a.py:10-50)"),
             ("", ""),
             ("subheader", "Quick Start"),
-            ("", "  locus analyze -p           # fast overview to console"),
+            ("", "  locus analyze              # export package to .local/locus-*"),
+            ("", "  locus analyze --stdout -p  # fast overview to console"),
             (
                 "",
                 "  locus analyze -o out.md -p -t -a --no-code  # write Markdown report",
@@ -485,7 +496,10 @@ def parse_arguments() -> argparse.Namespace:
                 "",
                 "  -d, --depth N     Import depth: 0=off, 1=direct, 2=nested, -1=unlimited (e.g., main->utils is 1; utils->helpers is 2)",
             ),
-            ("", "  -o, --output PATH Optional file/dir; omit to print to stdout"),
+            (
+                "",
+                "  -o, --output PATH Optional file/dir; omit to write .local/locus-*",
+            ),
             (
                 "",
                 "  --include PATTERN  Glob patterns to include (e.g., 'src/**/*.py' '*.md')",
@@ -494,18 +508,26 @@ def parse_arguments() -> argparse.Namespace:
                 "",
                 "  --exclude PATTERN  Glob patterns to exclude (e.g., 'tests/**' '**/migrations/**')",
             ),
+            ("", "  --stdout           Print to stdout instead of writing .local/locus-*"),
             (
                 "",
                 "  --notebook-outputs Include .ipynb outputs/media (default exports cells only)",
+            ),
+            (
+                "",
+                "  --notebook-markdown Render .ipynb to markdown + extracted assets via nbconvert",
             ),
             ("", "  --ascii-tree      ASCII connectors for tree"),
             ("", ""),
             ("subheader", "Examples"),
             (
                 "",
-                "  locus analyze -p                      # headers + tree (interactive)",
+                "  locus analyze --stdout -p             # headers + tree (interactive)",
             ),
-            ("", "  locus analyze -p -f                   # flat list (grep-friendly)"),
+            (
+                "",
+                "  locus analyze --stdout -p -f          # flat list (grep-friendly)",
+            ),
             (
                 "",
                 "  locus analyze -o out.md -p -t -a --no-code  # report: headers+tree+annotations",

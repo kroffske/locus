@@ -63,6 +63,125 @@ def test_argument_parser_notebook_outputs(monkeypatch):
     assert parsed_args.notebook_outputs is True
 
 
+def test_argument_parser_notebook_markdown(monkeypatch):
+    """Notebook markdown sidecar toggle is parsed as an analyze flag."""
+    monkeypatch.setattr("sys.argv", ["locus", "analyze", "--notebook-markdown"])
+    parsed_args = args.parse_arguments()
+    assert parsed_args.notebook_markdown is True
+
+
+def test_argument_parser_stdout(monkeypatch):
+    """Stdout toggle is parsed for explicit interactive mode."""
+    monkeypatch.setattr("sys.argv", ["locus", "analyze", "--stdout"])
+    parsed_args = args.parse_arguments()
+    assert parsed_args.stdout is True
+
+
+def test_collection_mode_without_output_uses_default_local_path(
+    monkeypatch,
+    tmp_path: Path,
+):
+    """Without -o, analyze writes a package to .local/locus-* by default."""
+    captured = {}
+
+    def fake_analyze(**kwargs):
+        return SimpleNamespace(
+            errors=[],
+            required_files={},
+            file_tree={},
+            project_readme_content=None,
+            similarity=None,
+            config_root_path=str(tmp_path),
+        )
+
+    def fake_collect(result, output_path, *_args):
+        captured["output_path"] = output_path
+        return (0, None)
+
+    monkeypatch.setattr(cli_main, "analyze", fake_analyze)
+    monkeypatch.setattr(
+        cli_main,
+        "_default_collection_output_path",
+        lambda project_root: str(Path(project_root) / ".local" / "locus-test"),
+    )
+    monkeypatch.setattr(cli_main.code, "collect_files_modular", fake_collect)
+    monkeypatch.setattr("sys.argv", ["locus", "analyze"])
+    parsed_args = args.parse_arguments()
+
+    exit_code = cli_main.handle_analyze_command(parsed_args)
+
+    assert exit_code == 0
+    assert captured["output_path"] == str(tmp_path / ".local" / "locus-test")
+
+
+def test_stdout_mode_without_output_skips_default_collection(
+    monkeypatch,
+):
+    """`--stdout` keeps the old interactive flow and does not call collection export."""
+    called = {"collect_called": False}
+
+    def fake_analyze(**kwargs):
+        return SimpleNamespace(
+            errors=[],
+            required_files={},
+            file_tree={},
+            project_readme_content=None,
+            similarity=None,
+            config_root_path=".",
+        )
+
+    def fake_collect(*_args, **_kwargs):
+        called["collect_called"] = True
+        return (0, None)
+
+    monkeypatch.setattr(cli_main, "analyze", fake_analyze)
+    monkeypatch.setattr(cli_main.code, "collect_files_modular", fake_collect)
+    monkeypatch.setattr("sys.argv", ["locus", "analyze", "--stdout"])
+    parsed_args = args.parse_arguments()
+
+    exit_code = cli_main.handle_analyze_command(parsed_args)
+
+    assert exit_code == 0
+    assert called["collect_called"] is False
+
+
+def test_collection_mode_passes_notebook_markdown_flag(
+    monkeypatch,
+    tmp_path: Path,
+):
+    """Notebook markdown rendering stays opt-in and reaches directory export."""
+    captured = {}
+
+    def fake_analyze(**kwargs):
+        return SimpleNamespace(
+            errors=[],
+            required_files={},
+            file_tree={},
+            project_readme_content=None,
+            similarity=None,
+            config_root_path=str(tmp_path),
+        )
+
+    def fake_collect(_result, _output_path, *_args):
+        captured["render_notebook_markdown"] = _args[2]
+        return (0, None)
+
+    monkeypatch.setattr(cli_main, "analyze", fake_analyze)
+    monkeypatch.setattr(
+        cli_main,
+        "_default_collection_output_path",
+        lambda project_root: str(Path(project_root) / ".local" / "locus-test"),
+    )
+    monkeypatch.setattr(cli_main.code, "collect_files_modular", fake_collect)
+    monkeypatch.setattr("sys.argv", ["locus", "analyze", "--notebook-markdown"])
+    parsed_args = args.parse_arguments()
+
+    exit_code = cli_main.handle_analyze_command(parsed_args)
+
+    assert exit_code == 0
+    assert captured["render_notebook_markdown"] is True
+
+
 def test_collection_mode_for_existing_directory_with_extension(
     monkeypatch,
     tmp_path: Path,
@@ -129,3 +248,16 @@ def test_collection_mode_rejects_existing_file_path(
 
     assert exit_code == 1
     assert called["collect_called"] is False
+
+
+def test_stdout_and_output_are_mutually_exclusive(
+    monkeypatch,
+):
+    """Explicit stdout mode should reject simultaneous --output usage."""
+
+    monkeypatch.setattr("sys.argv", ["locus", "analyze", "--stdout", "-o", "out.md"])
+    parsed_args = args.parse_arguments()
+
+    exit_code = cli_main.handle_analyze_command(parsed_args)
+
+    assert exit_code == 1
